@@ -22,7 +22,7 @@ namespace CoTigraphy
 
         ~CommandLineParser();
 
-        bool Parse(const int argc, wchar_t* argv[]) const noexcept;
-        bool Parse(const std::vector<std::wstring>& commandLineArguments) const noexcept;
+        Error Parse(const int argc, wchar_t* argv[]) const noexcept;
+        Error Parse(const std::vector<std::wstring>& commandLineArguments) const noexcept;
     };
 }

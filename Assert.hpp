@@ -8,6 +8,8 @@
 #include <sstream>
 #include <string>
 
+#include "Error.hpp"
+
 #if defined(_DEBUG)
 
 #define ASSERT(expr)                                                                        \

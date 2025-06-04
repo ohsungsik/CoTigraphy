@@ -12,6 +12,7 @@
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="HandleLeakDetector.cpp" />
     <ClCompile Include="CommandLineParser.cpp" />
+    <ClCompile Include="Error.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MemoryLeakDetector.hpp" />
@@ -22,6 +23,8 @@
     <ClInclude Include="VersionInfo.hpp" />
     <ClInclude Include="CommandLineParser.hpp" />
     <ClInclude Include="Assert.hpp" />
+    <ClInclude Include="ErrorCode.hpp" />
+    <ClInclude Include="Error.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="CoTigraphy.rc">

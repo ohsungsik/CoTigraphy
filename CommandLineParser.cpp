@@ -14,9 +14,13 @@ namespace CoTigraphy
     CommandLineParser::~CommandLineParser()
     = default;
 
-    bool CommandLineParser::Parse(const int argc, wchar_t* argv[]) const noexcept
+    Error CommandLineParser::Parse(const int argc, wchar_t* argv[]) const noexcept
     {
-        ASSERT(argc == 0 || argv != nullptr);
+        if (argc == 0 || argv == nullptr)
+        {
+            ASSERT(argc == 0 || argv != nullptr);
+            return Error::FromHResult(E_INVALIDARG);
+        }
 
         std::vector<std::wstring> args;
         args.reserve(argc);
@@ -28,9 +32,9 @@ namespace CoTigraphy
         return Parse(args);
     }
 
-    bool CommandLineParser::Parse(const std::vector<std::wstring>& commandLineArguments) const noexcept
+    Error CommandLineParser::Parse(const std::vector<std::wstring>& commandLineArguments) const noexcept
     {
         UNREFERENCED_PARAMETER(commandLineArguments);
-        return false;
+        return Error::FromErrorCode(eErrorCode::Succeeded);
     }
 }

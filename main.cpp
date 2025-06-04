@@ -15,9 +15,11 @@ int wmain(int argc, wchar_t* argv[])
     CoTigraphy::HandleLeakDetector::Initialize();
 
     const CoTigraphy::CommandLineParser commandLineParser;
-    if (commandLineParser.Parse(argc, argv) == false)
+    const CoTigraphy::Error error = commandLineParser.Parse(argc, argv);
+    if (error.IsFailed())
     {
-        return 1;
+        ASSERT(error.IsSucceeded());
+        return static_cast<int>(error.GetErrorCode()); // ErrorCode는 long 타입으로 int 타입과 표현 범위가 동일하기 떄문에 int로 형변환이 가능하다
     }
 
     return 0;

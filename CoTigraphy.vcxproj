@@ -309,6 +309,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="CommandLineParser.cpp" />
+    <ClCompile Include="Error.cpp" />
     <ClCompile Include="HandleLeakDetector.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MemoryLeakDetector.cpp" />
@@ -325,6 +326,8 @@
     <ClInclude Include="Assert.hpp" />
     <ClInclude Include="BuildInfo.hpp" />
     <ClInclude Include="CommandLineParser.hpp" />
+    <ClInclude Include="Error.hpp" />
+    <ClInclude Include="ErrorCode.hpp" />
     <ClInclude Include="HandleLeakDetector.hpp" />
     <ClInclude Include="MemoryLeakDetector.hpp" />
     <ClInclude Include="pch.hpp" />

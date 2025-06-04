@@ -16,5 +16,13 @@
     <ClInclude Include="MemoryLeakDetector.hpp" />
     <ClInclude Include="pch.hpp" />
     <ClInclude Include="HandleLeakDetector.hpp" />
+    <ClInclude Include="BuildInfo.hpp" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="VersionInfo.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="CoTigraphy.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>

@@ -1,25 +1,28 @@
 ﻿// \file MemoryLeakDetector.hpp
-// \last_updated 2025-06-04
+// \last_updated 2025-06-05
 // \author Oh Sungsik <ohsungsik@outlook.com>
 // \copyright (C) 2025. Oh Sungsik. All rights reserved.
 
 #pragma once
 
-class MemoryLeakDetector final
+namespace CoTigraphy
 {
-public:
-	explicit MemoryLeakDetector() noexcept;
+    class MemoryLeakDetector final
+    {
+    public:
+        explicit MemoryLeakDetector() noexcept;
 
-	MemoryLeakDetector(const MemoryLeakDetector& other) = delete;
-	MemoryLeakDetector(MemoryLeakDetector&& other) = delete;
+        MemoryLeakDetector(const MemoryLeakDetector& other) = delete;
+        MemoryLeakDetector(MemoryLeakDetector&& other) = delete;
 
-	MemoryLeakDetector& operator=(const MemoryLeakDetector& rhs) = delete;
-	MemoryLeakDetector& operator=(MemoryLeakDetector&& rhs) = delete;
+        MemoryLeakDetector& operator=(const MemoryLeakDetector& rhs) = delete;
+        MemoryLeakDetector& operator=(MemoryLeakDetector&& rhs) = delete;
 
-	~MemoryLeakDetector();
+        ~MemoryLeakDetector();
 
-	static void Initialize() noexcept;
+        static void Initialize() noexcept;
 
-private:
-	static void OnProcessExit() noexcept;
-};
+    private:
+        static void OnProcessExit() noexcept;
+    };
+}

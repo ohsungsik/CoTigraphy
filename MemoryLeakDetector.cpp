@@ -1,5 +1,5 @@
 ﻿// \file MemoryLeakDetector.cpp
-// \last_updated 2025-06-04
+// \last_updated 2025-06-05
 // \author Oh Sungsik <ohsungsik@outlook.com>
 // \copyright (C) 2025. Oh Sungsik. All rights reserved.
 
@@ -41,63 +41,66 @@
 //      Initialize() 함수 전체를 분리하는 대신, 공통 구조를 유지하면서 개발 효율을 높이기 위해 무시합니다.
 #pragma warning(disable: 4702)	// unreachable code
 
-MemoryLeakDetector::MemoryLeakDetector() noexcept
-= default;
-
-MemoryLeakDetector::~MemoryLeakDetector()
-= default;
-
-void MemoryLeakDetector::Initialize() noexcept
+namespace CoTigraphy
 {
-	// 디버그 모드에서만 메모리 릭 체크
+    MemoryLeakDetector::MemoryLeakDetector() noexcept
+    = default;
+
+    MemoryLeakDetector::~MemoryLeakDetector()
+    = default;
+
+    void MemoryLeakDetector::Initialize() noexcept
+    {
+        // 디버그 모드에서만 메모리 릭 체크
 #ifndef _DEBUG
-	return;
+		return;
 #endif
 
-	const int ret = atexit(OnProcessExit);
+        const int ret = atexit(OnProcessExit);
 
-	if (ret != 0 && IsDebuggerPresent())
-	{
-		OutputDebugStringW(L"[MemoryLeak] ERROR: Failed to register atexit handler.\n");
-		DebugBreak();	// 메모리 릭 탐지 코드 등록 실패
-	}
-}
+        if (ret != 0 && IsDebuggerPresent())
+        {
+            OutputDebugStringW(L"[MemoryLeak] ERROR: Failed to register atexit handler.\n");
+            DebugBreak(); // 메모리 릭 탐지 코드 등록 실패
+        }
+    }
 
-void MemoryLeakDetector::OnProcessExit() noexcept
-{
-	std::wostringstream oss;
+    void MemoryLeakDetector::OnProcessExit() noexcept
+    {
+        std::wostringstream oss;
 
-	// 헤더 출력
-	oss << L"[MemoryLeak] ==== Memory Leak Report ========\n";
+        // 헤더 출력
+        oss << L"[MemoryLeak] ==== Memory Leak Report ========\n";
 
-	// 헤더 출력
-	OutputDebugStringW(oss.str().c_str());
-	oss = {};
+        // 헤더 출력
+        OutputDebugStringW(oss.str().c_str());
+        oss = {};
 
-	// 메모리 릭 여부 판단
-	const bool leakDetected = (_CrtDumpMemoryLeaks() == TRUE);
-	const bool debuggerAttached = (IsDebuggerPresent() == TRUE);
+        // 메모리 릭 여부 판단
+        const bool leakDetected = (_CrtDumpMemoryLeaks() == TRUE);
+        const bool debuggerAttached = (IsDebuggerPresent() == TRUE);
 
-	// 상황별 메시지 출력
-	oss << L"[MemoryLeak]   ";
-	if (leakDetected == false || debuggerAttached == false)
-	{
-		oss << L"No memory leak detected\n";
-	}
-	else
-	{
-		oss << L"Memory leaks detected! Check Visual Studio output.\n";
-	}
+        // 상황별 메시지 출력
+        oss << L"[MemoryLeak]   ";
+        if (leakDetected == false || debuggerAttached == false)
+        {
+            oss << L"No memory leak detected\n";
+        }
+        else
+        {
+            oss << L"Memory leaks detected! Check Visual Studio output.\n";
+        }
 
-	// 푸터 출력
-	oss << L"[MemoryLeak] ================================\n";
+        // 푸터 출력
+        oss << L"[MemoryLeak] ================================\n";
 
-	// 출력
-	OutputDebugStringW(oss.str().c_str());
+        // 출력
+        OutputDebugStringW(oss.str().c_str());
 
-	// 디버거가 연결된 상태에서 릭이 감지된 경우 중단
-	if (leakDetected && debuggerAttached)
-	{
-		DebugBreak();	// 메모리 릭 발생!!!
-	}
+        // 디버거가 연결된 상태에서 릭이 감지된 경우 중단
+        if (leakDetected && debuggerAttached)
+        {
+            DebugBreak(); // 메모리 릭 발생!!!
+        }
+    }
 }

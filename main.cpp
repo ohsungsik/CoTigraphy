@@ -1,5 +1,5 @@
 ﻿// \file main.cpp
-// \last_updated 2025-06-04
+// \last_updated 2025-06-05
 // \author Oh Sungsik <ohsungsik@outlook.com>
 // \copyright (C) 2025. Oh Sungsik. All rights reserved.
 
@@ -10,8 +10,8 @@
 
 int wmain()
 {
-	MemoryLeakDetector::Initialize();
-	HandleLeakDetector::Initialize();
+	CoTigraphy::MemoryLeakDetector::Initialize();
+	CoTigraphy::HandleLeakDetector::Initialize();
 
 	return 0;
 }

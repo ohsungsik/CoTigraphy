@@ -1,5 +1,5 @@
 ﻿// \file HandleLeakDetector.cpp
-// \last_updated 2025-06-04
+// \last_updated 2025-06-05
 // \author Oh Sungsik <ohsungsik@outlook.com>
 // \copyright (C) 2025. Oh Sungsik. All rights reserved.
 
@@ -25,70 +25,70 @@
 //      Initialize() 함수 전체를 분리하는 대신, 공통 구조를 유지하면서 개발 효율을 높이기 위해 무시합니다.
 #pragma warning(disable: 4702)	// unreachable code
 
-namespace
+namespace CoTigraphy
 {
     DWORD gStartHandleCount = 0;
-}
 
-HandleLeakDetector::HandleLeakDetector() noexcept
-= default;
+    HandleLeakDetector::HandleLeakDetector() noexcept
+    = default;
 
-HandleLeakDetector::~HandleLeakDetector()
-= default;
+    HandleLeakDetector::~HandleLeakDetector()
+    = default;
 
-void HandleLeakDetector::Initialize() noexcept
-{
-    // 디버그 모드에서만 핸들 릭 체크
+    void HandleLeakDetector::Initialize() noexcept
+    {
+        // 디버그 모드에서만 핸들 릭 체크
 #ifndef _DEBUG
-	return;
+        return;
 #endif
 
-    const DWORD pid = ::GetCurrentProcessId();
-    const HANDLE hProcess = ::OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);
-    ::GetProcessHandleCount(hProcess, &gStartHandleCount);
-    CloseHandle(hProcess);
+        const DWORD pid = ::GetCurrentProcessId();
+        const HANDLE hProcess = ::OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);
+        ::GetProcessHandleCount(hProcess, &gStartHandleCount);
+        CloseHandle(hProcess);
 
-    const int ret = atexit(OnProcessExit);
+        const int ret = atexit(OnProcessExit);
 
-    if (ret != 0 && IsDebuggerPresent())
-    {
-        DebugBreak(); // 메모리 릭 탐지 코드 등록 실패
+        if (ret != 0 && IsDebuggerPresent())
+        {
+            DebugBreak(); // 메모리 릭 탐지 코드 등록 실패
+        }
     }
-}
 
-void HandleLeakDetector::OnProcessExit() noexcept
-{
-    const DWORD pid = ::GetCurrentProcessId();
-    const HANDLE hProcess = ::OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);
+    void HandleLeakDetector::OnProcessExit() noexcept
+    {
+        const DWORD pid = ::GetCurrentProcessId();
+        const HANDLE hProcess = ::OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);
 
-    DWORD curHandleCount = 0;
-    ::GetProcessHandleCount(hProcess, &curHandleCount);
+        DWORD curHandleCount = 0;
+        ::GetProcessHandleCount(hProcess, &curHandleCount);
 
-    // 일부 시스템 콜이나 라이브러리 내부에서 짧게 쓰는 핸들을 최종적으로 해제시키지
-    // 못하는 경우가 있으므로 "10개 이하"는 허용치로 설정
-    constexpr DWORD leakedThreshold = 10;
-    const DWORD leakedCount = curHandleCount - gStartHandleCount;
+        // 일부 시스템 콜이나 라이브러리 내부에서 짧게 쓰는 핸들을 최종적으로 해제시키지
+        // 못하는 경우가 있으므로 "10개 이하"는 허용치로 설정
+        constexpr DWORD leakedThreshold = 10;
+        const DWORD leakedCount = curHandleCount - gStartHandleCount;
 
-    constexpr int labelWidth = 22; // ':' 이전까지의 라벨 고정 폭
-    std::wostringstream oss;
-    oss << L"[HandleLeak] ==== Handle Leak Report ========\n";
-    oss << L"[HandleLeak]   " << std::left << std::setw(labelWidth)
-        << L"PID" << L": " << pid << L"\n";
-    oss << L"[HandleLeak]   " << std::left << std::setw(labelWidth)
-        << L"Start Handle Count" << L": " << gStartHandleCount << L"\n";
-    oss << L"[HandleLeak]   " << std::left << std::setw(labelWidth)
-        << L"End Handle Count" << L": " << curHandleCount << L"\n";
-    oss << L"[HandleLeak]   " << std::left << std::setw(labelWidth)
-        << L"Leaked Handles" << L": " << leakedCount;
+        constexpr int labelWidth = 22; // ':' 이전까지의 라벨 고정 폭
+        std::wostringstream oss;
+        oss << L"[HandleLeak] ==== Handle Leak Report ========\n";
+        oss << L"[HandleLeak]   " << std::left << std::setw(labelWidth)
+            << L"PID" << L": " << pid << L"\n";
+        oss << L"[HandleLeak]   " << std::left << std::setw(labelWidth)
+            << L"Start Handle Count" << L": " << gStartHandleCount << L"\n";
+        oss << L"[HandleLeak]   " << std::left << std::setw(labelWidth)
+            << L"End Handle Count" << L": " << curHandleCount << L"\n";
+        oss << L"[HandleLeak]   " << std::left << std::setw(labelWidth)
+            << L"Leaked Handles" << L": " << leakedCount;
 
-    if (leakedCount > leakedThreshold)
-        oss << L"  **** OVER THRESHOLD (limit=" << leakedThreshold << L")";
+        if (leakedCount > leakedThreshold)
+            oss << L"  **** OVER THRESHOLD (limit=" << leakedThreshold << L")";
 
-    oss << L"\n[HandleLeak] ================================\n";
+        oss << L"\n[HandleLeak] ================================\n";
 
-    const std::wstring msg = oss.str();
-    OutputDebugStringW(msg.c_str());
+        const std::wstring msg = oss.str();
+        OutputDebugStringW(msg.c_str());
 
-    if (leakedCount > leakedThreshold && IsDebuggerPresent())
-        DebugBreak();
+        if (leakedCount > leakedThreshold && IsDebuggerPresent())
+            DebugBreak();
+    }
 }

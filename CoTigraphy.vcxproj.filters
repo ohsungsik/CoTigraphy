@@ -11,6 +11,7 @@
     <ClCompile Include="MemoryLeakDetector.cpp" />
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="HandleLeakDetector.cpp" />
+    <ClCompile Include="CommandLineParser.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MemoryLeakDetector.hpp" />
@@ -19,6 +20,8 @@
     <ClInclude Include="BuildInfo.hpp" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="VersionInfo.hpp" />
+    <ClInclude Include="CommandLineParser.hpp" />
+    <ClInclude Include="Assert.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="CoTigraphy.rc">

@@ -5,13 +5,20 @@
 
 #include "pch.hpp"
 
+#include "CommandLineParser.hpp"
 #include "HandleLeakDetector.hpp"
 #include "MemoryLeakDetector.hpp"
 
-int wmain()
+int wmain(int argc, wchar_t* argv[])
 {
-	CoTigraphy::MemoryLeakDetector::Initialize();
-	CoTigraphy::HandleLeakDetector::Initialize();
+    CoTigraphy::MemoryLeakDetector::Initialize();
+    CoTigraphy::HandleLeakDetector::Initialize();
 
-	return 0;
+    const CoTigraphy::CommandLineParser commandLineParser;
+    if (commandLineParser.Parse(argc, argv) == false)
+    {
+        return 1;
+    }
+
+    return 0;
 }

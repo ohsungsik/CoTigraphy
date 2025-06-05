@@ -2,6 +2,16 @@
 @chcp 65001 > nul
 @setlocal EnableDelayedExpansion
 
+@REM pre-push 여부 확인
+if "%GIT_HOOK%"=="1" (
+    set "PAUSE_ENABLED=0"
+) else (
+    set "PAUSE_ENABLED=1"
+)
+
+@REM 현재 배치 파일이 있는 디렉터리
+set "SCRIPT_DIR=%~dp0"
+
 @REM Visual Studio 설치 경로 찾기
 for /f "usebackq tokens=1* delims=: " %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -requires Microsoft.Component.MSBuild`) do (
     if /i "%%i"=="installationPath" set VS_PATH=%%j
@@ -10,7 +20,7 @@ for /f "usebackq tokens=1* delims=: " %%i in (`"%ProgramFiles(x86)%\Microsoft Vi
 if not defined VS_PATH (
     echo Error: Visual Studio installation not found.
     echo Please ensure Visual Studio with C++ workload is installed.
-    pause
+    if %PAUSE_ENABLED% EQU 1 pause
     exit /b 1
 )
 
@@ -18,7 +28,7 @@ if not defined VS_PATH (
 set "VSDEVCMD_PATH=%VS_PATH%\Common7\Tools\VsDevCmd.bat"
 if not exist "%VSDEVCMD_PATH%" (
     echo Error: VsDevCmd.bat not found at expected location: %VSDEVCMD_PATH%
-    pause
+    if %PAUSE_ENABLED% EQU 1 pause
     exit /b 1
 )
 
@@ -26,7 +36,7 @@ if not exist "%VSDEVCMD_PATH%" (
 call "%VSDEVCMD_PATH%" > nul
 if %errorlevel% neq 0 (
     echo Error: Failed to initialize VS development environment
-    pause
+    if %PAUSE_ENABLED% EQU 1 pause
     exit /b 1
 )
 
@@ -45,7 +55,7 @@ set "COLOR_RED=[31m"
 set "COLOR_RESET=[0m"
 
 @REM 모든 .sln 파일에 대해서 빌드
-for %%S in (*.sln) do (
+for %%S in ("!SCRIPT_DIR!\*.sln") do (
     echo ===================================================
     echo Building solution: %%S
     echo ===================================================
@@ -90,10 +100,10 @@ echo ==================================================
 @REM 실패 여부 검사
 if %HAS_FAILED% EQU 1 (
     echo !COLOR_RED![SUMMARY] 일부 빌드가 실패했습니다.!COLOR_RESET!
-    pause
+    if %PAUSE_ENABLED% EQU 1 pause
     exit /b 1
 ) else (
     echo !COLOR_GREEN![SUMMARY] 모든 빌드가 성공적으로 완료되었습니다.!COLOR_RESET!
-    pause
+    if %PAUSE_ENABLED% EQU 1 pause
     exit /b 0
 )

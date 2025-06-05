@@ -7,8 +7,8 @@ set "SCRIPT_DIR=%~dp0"
 @REM 상위 폴더 절대 경로
 for %%A in ("%SCRIPT_DIR%\..") do set "PARENT_DIR=%%~fA"
 @REM 헤더 파일 절대 경로
-set "FILE=%PARENT_DIR%\BuildInfo.hpp"
-@REM 오늘 날짜 (yyyy-MM-dd)
+set "FILE=%PARENT_DIR%\CoTigraphyLib\BuildInfo.hpp"
+@REM 빌드 날짜 (yyyy-MM-dd)
 for /f %%i in ('powershell -command "Get-Date -Format yyyy-MM-dd"') do set "BUILD_DATE=%%i"
 @REM 빌드 시간 (HH:mm:ss)
 for /f %%i in ('powershell -command "Get-Date -Format HH:mm:ss"') do set "BUILD_TIME=%%i"

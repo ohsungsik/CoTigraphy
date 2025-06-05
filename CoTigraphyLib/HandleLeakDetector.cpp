@@ -55,7 +55,7 @@ namespace CoTigraphy
         }
     }
 
-    void HandleLeakDetector::OnProcessExit() noexcept
+    void HandleLeakDetector::OnProcessExit()
     {
         const DWORD pid = ::GetCurrentProcessId();
         const HANDLE hProcess = ::OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);

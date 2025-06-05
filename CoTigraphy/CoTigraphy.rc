@@ -1,9 +1,9 @@
-// Microsoft Visual C++ generated resource script.
+﻿// Microsoft Visual C++ generated resource script.
 //
 #pragma code_page(65001)
 
 #include "resource.h"
-#include "VersionInfo.hpp"
+#include "../CoTigraphyLib/VersionInfo.hpp"
 
 #define APSTUDIO_READONLY_SYMBOLS
 /////////////////////////////////////////////////////////////////////////////

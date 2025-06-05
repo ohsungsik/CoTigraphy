@@ -143,14 +143,19 @@ namespace CoTigraphy
 
     // 에러 코드(HRESULT)를 생성하는 매크로
 #define MAKE_ERRORCODE(facility) ((SEVERITY_ERROR << HRESULT_SEVERITY_BIT) | (HRESULT_CUSTOMER_FLAG  << HRESULT_CUSTOMER_BIT) | ((static_cast<unsigned short>(facility)) << HRESULT_FACILITY_SHIFT))
+#define MAKE_SUCCESSCODE(facility) ((SEVERITY_SUCCESS << HRESULT_SEVERITY_BIT) | (HRESULT_CUSTOMER_FLAG  << HRESULT_CUSTOMER_BIT) | ((static_cast<unsigned short>(facility)) << HRESULT_FACILITY_SHIFT))
 
     enum class eErrorCode : HRESULT
     {
         // Common Error code
         Succeeded = NOERROR,
 
-        // CoTigraphy Project error code
-        InvalidArguments = MAKE_ERRORCODE(eFacility::CoTigraphy), // CoTigraphy 프로젝트 에러 코드 시작 값
+        // CoTigraphy 프로젝트 성공 코드 시작
+        EarlyExit = MAKE_SUCCESSCODE(eFacility::CoTigraphy),        // 조기 반환, 명령줄 인자의 --version 처럼 처리 후 이후 로직을 실행하지 않아야 하는 경우 이 코드를 반환한다.
+
+        // CoTigraphy 프로젝트 에러 코드 시작 값
+        InvalidArguments = MAKE_ERRORCODE(eFacility::CoTigraphy),   // 유효하지 않은 파라미터
+        CommandLineArgumentsAlreadyExists,                          // 이미 추가된 커맨드 라인 파라미터
 
     };
 

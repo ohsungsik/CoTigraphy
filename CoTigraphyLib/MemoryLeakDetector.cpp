@@ -65,7 +65,7 @@ namespace CoTigraphy
         }
     }
 
-    void MemoryLeakDetector::OnProcessExit() noexcept
+    void MemoryLeakDetector::OnProcessExit()
     {
         std::wostringstream oss;
 

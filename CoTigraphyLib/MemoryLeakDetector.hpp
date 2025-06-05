@@ -23,6 +23,6 @@ namespace CoTigraphy
         static void Initialize() noexcept;
 
     private:
-        static void OnProcessExit() noexcept;
+        static void OnProcessExit();
     };
 }

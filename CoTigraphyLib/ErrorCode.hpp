@@ -156,6 +156,7 @@ namespace CoTigraphy
         // CoTigraphy 프로젝트 에러 코드 시작 값
         InvalidArguments = MAKE_ERRORCODE(eFacility::CoTigraphy),   // 유효하지 않은 파라미터
         CommandLineArgumentsAlreadyExists,                          // 이미 추가된 커맨드 라인 파라미터
+        CommandLineArgumentNotFound,                                // 미정의 명령줄 인자가 들어왔을 때
 
     };
 

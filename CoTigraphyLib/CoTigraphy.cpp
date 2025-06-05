@@ -1,6 +1,7 @@
 ﻿#include "pch.hpp"
 #include "CoTigraphy.hpp"
 
+#include <iostream>
 #include <shellapi.h>
 
 
@@ -52,7 +53,7 @@ namespace CoTigraphy
 	            true,                          // mCausesExit
 	            [&](const std::wstring_view&)
 		        {
-		            commandLineParser.PrintHelp();
+		            commandLineParser.PrintHelpTo(std::wcout);
 	            }
 			});
 		if (error.IsFailed())

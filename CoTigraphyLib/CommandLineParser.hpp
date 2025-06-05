@@ -28,6 +28,18 @@ namespace CoTigraphy
 		}
 	};
 
+	struct CommandLineOptionContext
+	{
+		const std::vector<std::wstring>& mArgs;
+		size_t mIndex = 0;
+		std::unordered_map<std::wstring, const CommandLineOption*>& mProcessed;
+		const CommandLineOption* mOption = nullptr;
+		std::wstring mToken;
+		std::wstring mValue;
+		bool mEarlyExit = false;
+		bool mOnlyCausesExit = false;
+	};
+
 	class CommandLineParser final
 	{
 	public:
@@ -42,10 +54,19 @@ namespace CoTigraphy
 
 		Error AddOption(const CommandLineOption& option);
 
-		Error Parse(const int argc, wchar_t* argv[]) const;
-		Error Parse(const std::vector<std::wstring>& commandLineArguments) const;
+		Error Parse(const int argc, wchar_t* argv[]);
+		Error Parse(const std::vector<std::wstring>& commandLineArguments);
 
-		void PrintHelp() const;
+		std::wostream& PrintHelpTo(std::wostream& os) const;
+
+	private:
+		Error TryProcessOption(CommandLineOptionContext& context);
+		bool MatchOption(CommandLineOptionContext& context);
+		Error CheckOptionValidity(CommandLineOptionContext& context) const;
+		Error DispatchOptionHandler(const CommandLineOptionContext& context) const;
+
+	private:
+		std::unordered_map<std::wstring, const CommandLineOption*> mOptionLookup;
 
 	private:
 		std::vector<CommandLineOption> mCommandLineOptions;

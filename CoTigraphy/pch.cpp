@@ -6,3 +6,6 @@
 #include "pch.hpp"
 
 #include <LinkLibraries.hpp>
+
+
+#pragma comment(lib, "CoTigraphyLib" STATIC_LIBRARY_SUFFIX)

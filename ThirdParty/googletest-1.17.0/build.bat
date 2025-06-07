@@ -103,11 +103,16 @@ if %HAS_FAILED% EQU 1 (
 
 
 :cleanup_success
+@REM 기본은 PAUSE고, 1이 오면 skip을 하려면
+if "!PAUSE_DISABLED!" neq "1" (
+    pause
+)
 endlocal
-if "%PAUSE_DISABLED%" NEQ "1" pause
 exit /b 0
 
 :cleanup_failed
+if "!PAUSE_DISABLED!" neq "1" (
+    pause
+)
 endlocal
-if "%PAUSE_DISABLED%" NEQ "1" pause
 exit /b 1

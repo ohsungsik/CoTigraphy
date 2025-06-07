@@ -38,21 +38,23 @@ if not defined VCINSTALLDIR (
 @REM 외부 라이브러리 목록
 set "THIRD_PARTIES=googletest-1.17.0"
 
-set PAUSE_DISABLED=1
-
 for %%l in (%THIRD_PARTIES%) do (
-    echo "%%l"
-    call "%SCRIPT_DIR%\%%l\build.bat"
-
+    set "BUILD_SCRIPT=%SCRIPT_DIR%%%l\build.bat"
+    cmd /C "set "PAUSE_DISABLED=1" && "!BUILD_SCRIPT!""
     if errorlevel 1 (
         goto cleanup
     )
 )
 
-
+if "!PAUSE_DISABLED!" neq "1" (
+    pause
+)
 endlocal
 exit /b 0
 
 :cleanup
+if "!PAUSE_DISABLED!" neq "1" (
+    pause
+)
 endlocal
 exit /b 1

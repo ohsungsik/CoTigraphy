@@ -1,5 +1,5 @@
 ﻿// \file CommandLineParser.cpp
-// \last_updated 2025-06-05
+// \last_updated 2025-06-07
 // \author Oh Sungsik <ohsungsik@outlook.com>
 // \copyright (C) 2025. Oh Sungsik. All rights reserved.
 
@@ -28,15 +28,15 @@ namespace CoTigraphy
 			return MAKE_ERROR_FROM_HRESULT(E_INVALIDARG);
 		}
 
-		if (mOptionLookup.find(option.mName) != mOptionLookup.end())
+		if (mOptionLookup.find(option.mName) != mOptionLookup.end()
+			|| mOptionLookup.find(option.mShortName) != mOptionLookup.end())
 			return MAKE_ERROR(eErrorCode::CommandLineArgumentsAlreadyExists);
 
 		mCommandLineOptions.emplace_back(option);
 
 		// 사용자가 Name 혹은 ShortName으로 입력할 수 있으므로 둘 다 매핑
 		mOptionLookup[option.mName] = &mCommandLineOptions.back();
-		if (option.mShortName.empty() == false)
-			mOptionLookup[option.mShortName] = &mCommandLineOptions.back();
+		mOptionLookup[option.mShortName] = &mCommandLineOptions.back();
 
 		return MAKE_ERROR(eErrorCode::Succeeded);
 	}

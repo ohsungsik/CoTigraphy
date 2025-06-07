@@ -36,7 +36,7 @@ if not defined VCINSTALLDIR (
 )
 
 @REM 외부 라이브러리 빌드
-call "%SCRIPT_DIR%\ThirdParty\build.bat"
+cmd /C "set "PAUSE_DISABLED=1" && "%SCRIPT_DIR%\ThirdParty\build.bat"
 if %errorlevel% neq 0 (
     echo Error: Failed to build third party library
     goto cleanup_failed
@@ -110,11 +110,15 @@ if %HAS_FAILED% EQU 1 (
 
 
 :cleanup_success
+if "!PAUSE_DISABLED!" neq "1" (
+    pause
+)
 endlocal
-if "%PAUSE_DISABLED%" NEQ "1" pause
 exit /b 0
 
 :cleanup_failed
+if "!PAUSE_DISABLED!" neq "1" (
+    pause
+)
 endlocal
-if "%PAUSE_DISABLED%" NEQ "1" pause
 exit /b 1

@@ -91,7 +91,7 @@ namespace CoTigraphy
     {
         std::wstringstream stringstream;
         stringstream << L"CoTigraphy " << VERSION_STRING_WIDE << L"\n"
-            << L"Copyright (C) 2025. Oh Sungsik. All rights reserved.\n\n"
+            << COPYRIGHT_WIDE << L"\n\n"
             << L"Usage:\n  CoTigraphy [options]\n\n"
             << L"Available options:\n";
 

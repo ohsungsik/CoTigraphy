@@ -1,5 +1,5 @@
 ﻿// \file VersionInfo.hpp
-// \last_updated 2025-06-04
+// \last_updated 2025-06-08
 // \author Oh Sungsik <ohsungsik@outlook.com>
 // \copyright (C) 2025. Oh Sungsik. All rights reserved.
 
@@ -34,3 +34,10 @@
     TO_WIDE_STRING(VERSION_INFO_BUILD)
 
 #define VERSION_STRING VERSION_STRING_WIDE
+
+
+// Copyright
+#define COPYRIGHT_TEXT Copyright (C) 2025. Oh Sungsik. All rights reserved.
+
+#define COPYRIGHT_MULTIBYTE TO_MULTIBYTE_STRING(COPYRIGHT_TEXT)
+#define COPYRIGHT_WIDE      TO_WIDE_STRING(COPYRIGHT_TEXT)

@@ -77,7 +77,7 @@ BEGIN
             VALUE "FileDescription", "CoTigraphy"
             VALUE "FileVersion", VERSION_STRING_MULTIBYTE
             VALUE "InternalName", "CoTigraphy.exe"
-            VALUE "LegalCopyright", "Copyright (C) 2025 Oh sungsik. All rights reserved"
+            VALUE "LegalCopyright", COPYRIGHT_MULTIBYTE
             VALUE "OriginalFilename", "CoTigraphy.exe"
             VALUE "ProductName", "CoTigraphy"
             VALUE "ProductVersion", VERSION_STRING_MULTIBYTE

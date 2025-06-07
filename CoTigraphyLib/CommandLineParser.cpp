@@ -1,5 +1,5 @@
 ﻿// \file CommandLineParser.cpp
-// \last_updated 2025-06-07
+// \last_updated 2025-06-08
 // \author Oh Sungsik <ohsungsik@outlook.com>
 // \copyright (C) 2025. Oh Sungsik. All rights reserved.
 
@@ -14,199 +14,124 @@
 
 namespace CoTigraphy
 {
-	CommandLineParser::CommandLineParser() noexcept
-		= default;
+    CommandLineParser::CommandLineParser() noexcept
+    = default;
 
-	CommandLineParser::~CommandLineParser()
-		= default;
+    CommandLineParser::~CommandLineParser()
+    = default;
 
-	Error CommandLineParser::AddOption(const CommandLineOption& option)
-	{
-		if (option.IsValid() == false)
-		{
-			ASSERT(option.IsValid());
-			return MAKE_ERROR_FROM_HRESULT(E_INVALIDARG);
-		}
+    Error CommandLineParser::AddOption(const CommandLineOption& option)
+    {
+        if (option.IsValid() == false)
+        {
+            ASSERT(false); // 유효하지 않은 입력
+            return MAKE_ERROR_FROM_HRESULT(E_INVALIDARG);
+        }
 
-		if (mOptionLookup.find(option.mName) != mOptionLookup.end()
-			|| mOptionLookup.find(option.mShortName) != mOptionLookup.end())
-			return MAKE_ERROR(eErrorCode::CommandLineArgumentsAlreadyExists);
-
-		mCommandLineOptions.emplace_back(option);
-
-		// 사용자가 Name 혹은 ShortName으로 입력할 수 있으므로 둘 다 매핑
-		mOptionLookup[option.mName] = &mCommandLineOptions.back();
-		mOptionLookup[option.mShortName] = &mCommandLineOptions.back();
-
-		return MAKE_ERROR(eErrorCode::Succeeded);
-	}
-
-	Error CommandLineParser::Parse(const int argc, wchar_t* argv[])
-	{
-		if (argc == 0 || argv == nullptr)
-		{
-			ASSERT(argc == 0 || argv != nullptr);
-			return MAKE_ERROR_FROM_HRESULT(E_INVALIDARG);
-		}
-
-		std::vector<std::wstring> args;
-		args.reserve(argc);
-		for (int i = 1; i < argc; ++i)
-		{
-			args.emplace_back(argv[i]);
-		}
-
-		return Parse(args);
-	}
-
-	Error CommandLineParser::Parse(const std::vector<std::wstring>& commandLineArguments)
-	{
-		// 처리한 옵션(토큰별) 여부를 추적하기 위한 맵
-		std::unordered_map<std::wstring, const CommandLineOption*> processedOptions{};
-
-		// 1) 종료 옵션(Help, Version 등) 먼저 처리
-		{
-			size_t idx = 0;
-			while (idx < commandLineArguments.size())
-			{
-				CommandLineOptionContext context{
-					commandLineArguments, idx, processedOptions,
-					nullptr, L"", L"", false, true // onlyCausesExit = true
-				};
-
-				const Error err = TryProcessOption(context);
-				if (err.IsFailed())
-					return err;
-
-				if (context.mEarlyExit)
-					return MAKE_ERROR(eErrorCode::EarlyExit);
-
-				// 값을 소비했으면(RequiresValue=true) context.mIndex가 그 값 토큰을 가리킴
-				idx = context.mIndex + 1;
-			}
-		}
-
-		// 2) 일반 옵션 처리
-		{
-			size_t idx = 0;
-			while (idx < commandLineArguments.size())
-			{
-				CommandLineOptionContext context{
-					commandLineArguments, idx, processedOptions,
-					nullptr, L"", L"", false, false // onlyCausesExit = false
-				};
-
-				const Error err = TryProcessOption(context);
-				if (err.IsFailed())
-					return err;
-
-				idx = context.mIndex + 1;
-			}
-		}
-
-		return MAKE_ERROR(eErrorCode::Succeeded);
-	}
-
-	std::wostream& CommandLineParser::PrintHelpTo(std::wostream& os) const
-	{
-		std::wstringstream stringstream;
-		stringstream << L"CoTigraphy " << VERSION_STRING_WIDE << L"\n"
-			<< L"Copyright (C) 2025. Oh Sungsik. All rights reserved.\n\n"
-			<< L"Usage:\n  CoTigraphy [options]\n\n"
-			<< L"Available options:\n";
-
-		for (const auto& opt : mCommandLineOptions)
-		{
-			std::wostringstream oss;
-			oss << opt.mShortName << L", " << opt.mName;
-			if (opt.mRequiresValue)
-				oss << L" <value>";
-
-			stringstream << L"  " << std::setw(28) << std::left << oss.str() << opt.mDescription << L"\n";
-		}
-
-		stringstream << L"\nFor more information, visit: https://github.com/ohsungsik/CoTigraphy\n";
-		os << stringstream.str();
-		return os;
-	}
+        if (mLookup.count(option.mName) || mLookup.count(option.mShortName))
+        {
+            ASSERT(false); // 중복된 명령
+            return MAKE_ERROR(eErrorCode::CommandLineArgumentsAlreadyExists);
+        }
 
 
-	Error CommandLineParser::TryProcessOption(CommandLineOptionContext& context)
-	{
-		// 1) 옵션 이름이 mOptionLookup에 없으면 “알 수 없는 옵션” 처리
-		if (!MatchOption(context))
-		{
-			// “알 수 없는 옵션”이 있을 때 에러 반환
-			// (필요하다면, context.mToken을 std::wcerr로 찍어서 피드백 가능)
-			return MAKE_ERROR(eErrorCode::CommandLineArgumentNotFound);
-		}
+        // Keep a copy for help ordering
+        mOptions.emplace_back(option);
+        const size_t idx = mOptions.size() - 1;
 
-		// 2) 중복 옵션 검사 및 값 소비 여부 확인
-		if (const Error err = CheckOptionValidity(context); err.IsFailed())
-			return err;
+        // Map names to the index
+        mLookup[mOptions[idx].mName] = idx;
+        mLookup[mOptions[idx].mShortName] = idx;
+        return MAKE_ERROR(eErrorCode::Succeeded);
+    }
 
-		// 3) 커스텀 핸들러 실행
-		if (const Error err = DispatchOptionHandler(context); err.IsFailed())
-			return err;
+    Error CommandLineParser::Parse(const int argc, wchar_t* argv[])
+    {
+        if (argc < 1 || argv == nullptr)
+        {
+            ASSERT(false); // 명령줄 인자를 찾을 수 없음
+            return MAKE_ERROR_FROM_HRESULT(E_INVALIDARG);
+        }
 
-		// 4) 만약 “초기화 시 종료 옵션”(onlyCausesExit=true)이면 earlyExit 플래그를 세트
-		if (context.mOption->mCausesExit)
-		{
-			context.mEarlyExit = true;
-			return MAKE_ERROR(eErrorCode::EarlyExit);
-		}
+        std::vector<std::wstring> args;
+        args.reserve(static_cast<size_t>(argc) - 1);
+        for (int i = 1; i < argc; ++i)
+            args.emplace_back(argv[i]);
 
-		return MAKE_ERROR(eErrorCode::Succeeded);
-	}
+        return Parse(args);
+    }
 
-	bool CommandLineParser::MatchOption(CommandLineOptionContext& context)
-	{
-		context.mToken = context.mArgs[context.mIndex];
+    Error CommandLineParser::Parse(const std::vector<std::wstring>& args)
+    {
+        // 1) Handle exit-causing options first, regardless of position
+        for (size_t idx = 0; idx < args.size(); ++idx)
+        {
+            auto it = mLookup.find(args[idx]);
+            if (it != mLookup.end() && mOptions[it->second].mCausesExit)
+            {
+                // Process and then exit immediately
+                Error err = ProcessToken(args, idx);
+                return err.IsFailed() ? err : MAKE_ERROR(eErrorCode::EarlyExit);
+            }
+        }
 
-		auto it = mOptionLookup.find(context.mToken);
-		if (it == mOptionLookup.end())
-			return false;
+        // 2) No exit-causing option found: normal parsing
+        size_t idx = 0;
+        while (idx < args.size())
+        {
+            Error err = ProcessToken(args, idx);
+            if (err.IsFailed())
+                return err;
+            ++idx;
+        }
+        return MAKE_ERROR(eErrorCode::Succeeded);
+    }
 
-		context.mOption = it->second;
-		if (context.mOption == nullptr)
-			return false;
+    std::wostream& CommandLineParser::PrintHelpTo(std::wostream& os) const
+    {
+        std::wstringstream stringstream;
+        stringstream << L"CoTigraphy " << VERSION_STRING_WIDE << L"\n"
+            << L"Copyright (C) 2025. Oh Sungsik. All rights reserved.\n\n"
+            << L"Usage:\n  CoTigraphy [options]\n\n"
+            << L"Available options:\n";
 
-		// 종료 옵션 단계인지(false), 일반 옵션 단계인지(true)에 맞춰서 체크
-		if (context.mOnlyCausesExit != context.mOption->mCausesExit)
-			return false;
+        for (const auto& opt : mOptions)
+        {
+            std::wostringstream oss;
+            oss << opt.mShortName << L", " << opt.mName;
+            if (opt.mRequiresValue)
+                oss << L" <value>";
 
-		return true;
-	}
+            stringstream << L"  " << std::setw(28) << std::left << oss.str() << opt.mDescription << L"\n";
+        }
 
-	Error CommandLineParser::CheckOptionValidity(CommandLineOptionContext& context) const
-	{
-		// 1) 이미 처리된 옵션이면 오류
-		if (context.mProcessed.find(context.mToken) != context.mProcessed.end())
-			return MAKE_ERROR(eErrorCode::CommandLineArgumentsAlreadyExists);
+        stringstream << L"\nFor more information, visit: https://github.com/ohsungsik/CoTigraphy\n";
+        os << stringstream.str();
+        return os;
+    }
 
-		context.mProcessed[context.mToken] = context.mOption;
+    Error CommandLineParser::ProcessToken(const std::vector<std::wstring>& args, size_t& index)
+    {
+        const auto& token = args[index];
+        auto it = mLookup.find(token);
+        if (it == mLookup.end())
+            return MAKE_ERROR(eErrorCode::CommandLineArgumentNotFound);
+        const CommandLineOption& option = mOptions[it->second];
 
-		// 2) 만약 값이 필요한 옵션이라면, 다음 토큰이 값인지 판별
-		if (context.mOption->mRequiresValue)
-		{
-			if (context.mIndex + 1 >= context.mArgs.size())
-				return MAKE_ERROR_FROM_HRESULT(E_INVALIDARG);
+        // Determine and consume value if required
+        std::wstring value;
+        if (option.mRequiresValue)
+        {
+            if (index + 1 >= args.size())
+                return MAKE_ERROR_FROM_HRESULT(E_INVALIDARG);
+            value = args[index + 1];
+            ++index;
+        }
 
-			// 값 토큰으로 넘어가기
-			context.mIndex += 1;
-			context.mValue = context.mArgs[context.mIndex];
-			if (context.mValue.empty())
-				return MAKE_ERROR(eErrorCode::InvalidArguments);
-		}
+        // Dispatch handler
+        if (option.mHandler)
+            option.mHandler(value);
 
-		return MAKE_ERROR(eErrorCode::Succeeded);
-	}
-
-	Error CommandLineParser::DispatchOptionHandler(const CommandLineOptionContext& context) const
-	{
-		if (context.mOption->mHandler)
-			context.mOption->mHandler(context.mValue);
-
-		return MAKE_ERROR(eErrorCode::Succeeded);
-	}
+        return MAKE_ERROR(eErrorCode::Succeeded);
+    }
 }

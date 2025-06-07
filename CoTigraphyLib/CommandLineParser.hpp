@@ -1,5 +1,5 @@
 ﻿// \file CommandLineParser.hpp
-// \last_updated 2025-06-05
+// \last_updated 2025-06-08
 // \author Oh Sungsik <ohsungsik@outlook.com>
 // \copyright (C) 2025. Oh Sungsik. All rights reserved.
 
@@ -11,64 +11,51 @@
 
 namespace CoTigraphy
 {
-	struct CommandLineOption
-	{
-		std::wstring mName;                 // 예: "--help"
-		std::wstring mShortName;			// 예: "-h"
-		std::wstring mDescription;			// 예: "Print help and exit"
-		bool mRequiresValue;				// 값이 필요한 옵션인지 여부
-		bool mCausesExit;					// 인자 처리 후 종료되어야 하는지 여부
-		std::function<void(const std::wstring_view&)> mHandler;	// TODO: 이게 여기에 있는게 맞나?
+    // Describes a single command-line option
+    struct CommandLineOption
+    {
+        std::wstring mName; // Long name, e.g. "--help"
+        std::wstring mShortName; // Short name, e.g. "-h"
+        std::wstring mDescription; // Help description
+        bool mRequiresValue; // Does this option require a following value?
+        bool mCausesExit; // Should parsing stop after this option?
+        std::function<void(const std::wstring&)> mHandler; // Called with the option's value (or empty)
 
-		bool IsValid() const noexcept
-		{
-			return mName.empty() == false
-				&& mShortName.empty() == false
-				&& mDescription.empty() == false;
-		}
-	};
+        bool IsValid() const noexcept
+        {
+            return !mName.empty() && !mShortName.empty() && !mDescription.empty();
+        }
+    };
 
-	struct CommandLineOptionContext
-	{
-		const std::vector<std::wstring>& mArgs;
-		size_t mIndex = 0;
-		std::unordered_map<std::wstring, const CommandLineOption*>& mProcessed;
-		const CommandLineOption* mOption = nullptr;
-		std::wstring mToken;
-		std::wstring mValue;
-		bool mEarlyExit = false;
-		bool mOnlyCausesExit = false;
-	};
+    class CommandLineParser final
+    {
+    public:
+        explicit CommandLineParser() noexcept;
+        CommandLineParser(const CommandLineParser& other) = delete;
+        CommandLineParser(CommandLineParser&& other) = delete;
 
-	class CommandLineParser final
-	{
-	public:
-		explicit CommandLineParser() noexcept;
-		CommandLineParser(const CommandLineParser& other) = delete;
-		CommandLineParser(CommandLineParser&& other) = delete;
+        CommandLineParser& operator=(const CommandLineParser& rhs) = delete;
+        CommandLineParser& operator=(CommandLineParser&& rhs) = delete;
 
-		CommandLineParser& operator=(const CommandLineParser& rhs) = delete;
-		CommandLineParser& operator=(CommandLineParser&& rhs) = delete;
+        ~CommandLineParser();
 
-		~CommandLineParser();
+        // Registers an option. Returns error if invalid or duplicate.
+        Error AddOption(const CommandLineOption& option);
 
-		Error AddOption(const CommandLineOption& option);
+        // Parses argc/argv, skipping argv[0].
+        Error Parse(int argc, wchar_t* argv[]);
+        // Parses a vector of tokens.
+        Error Parse(const std::vector<std::wstring>& args);
 
-		Error Parse(const int argc, wchar_t* argv[]);
-		Error Parse(const std::vector<std::wstring>& commandLineArguments);
+        std::wostream& PrintHelpTo(std::wostream& os) const;
 
-		std::wostream& PrintHelpTo(std::wostream& os) const;
+    private:
+        // Processes a single token at args[index], may consume the next token as value.
+        Error ProcessToken(const std::vector<std::wstring>& args, size_t& index);
 
-	private:
-		Error TryProcessOption(CommandLineOptionContext& context);
-		bool MatchOption(CommandLineOptionContext& context);
-		Error CheckOptionValidity(CommandLineOptionContext& context) const;
-		Error DispatchOptionHandler(const CommandLineOptionContext& context) const;
-
-	private:
-		std::unordered_map<std::wstring, const CommandLineOption*> mOptionLookup;
-
-	private:
-		std::vector<CommandLineOption> mCommandLineOptions;
-	};
+        // Store options in vector for ordered help output
+        std::vector<CommandLineOption> mOptions;
+        // Map each name to the index in mOptions (avoids duplicate storage)
+        std::unordered_map<std::wstring, size_t> mLookup;
+    };
 }

@@ -1,5 +1,5 @@
 ﻿// \file Error.hpp
-// \last_updated 2025-06-05
+// \last_updated 2025-06-08
 // \author Oh Sungsik <ohsungsik@outlook.com>
 // \copyright (C) 2025. Oh Sungsik. All rights reserved.
 
@@ -34,6 +34,13 @@ namespace CoTigraphy
 
         ~Error();
 
+        bool operator==(const eErrorCode& rhs) const noexcept;
+
+        [[nodiscard]] explicit operator eErrorCode() const noexcept
+        {
+            return mErrorCode;
+        }
+
     public:
         [[nodiscard]] bool IsFailed() const noexcept { return IS_ERROR(mErrorCode); }
         [[nodiscard]] bool IsSucceeded() const noexcept { return IsFailed() == false; }
@@ -64,4 +71,4 @@ namespace CoTigraphy
 
 #define RETURN_IF_FAILED(expr) if (const CoTigraphy::Error _error = (expr); \
                                     _error.IsFailed()) return _error
-}
+}   // namespace CoTigraphy

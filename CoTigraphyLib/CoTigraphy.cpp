@@ -1,4 +1,9 @@
-﻿#include "pch.hpp"
+﻿// \file CoTigraphy.cpp
+// \last_updated 2025-06-08
+// \author Oh Sungsik <ohsungsik@outlook.com>
+// \copyright (C) 2025. Oh Sungsik. All rights reserved.
+
+#include "pch.hpp"
 #include "CoTigraphy.hpp"
 
 #include <iostream>
@@ -106,4 +111,4 @@ namespace CoTigraphy
 
 		return MAKE_ERROR(eErrorCode::Succeeded);
 	}
-}
+}	// namespace CoTigraphy

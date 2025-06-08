@@ -1,5 +1,5 @@
 ﻿// \file MemoryLeakDetector.cpp
-// \last_updated 2025-06-05
+// \last_updated 2025-06-08
 // \author Oh Sungsik <ohsungsik@outlook.com>
 // \copyright (C) 2025. Oh Sungsik. All rights reserved.
 
@@ -103,4 +103,4 @@ namespace CoTigraphy
             DebugBreak(); // 메모리 릭 발생!!!
         }
     }
-}
+}   // namespace CoTigraphy

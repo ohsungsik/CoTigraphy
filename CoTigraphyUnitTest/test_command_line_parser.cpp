@@ -1,9 +1,172 @@
-﻿#include "pch.hpp"
+﻿// \file test_command_line_parser.cpp
+// \last_updated 2025-06-08
+// \author Oh Sungsik <ohsungsik@outlook.com>
+// \copyright (C) 2025. Oh Sungsik. All rights reserved.
 
-TEST(command_line_parser, Init)
+#include "pch.hpp"
+#include <CommandLineParser.hpp>
+
+using namespace CoTigraphy;
+
+// 테스트 케이스 데이터: CommandLineOption 상속 + expectedIsValid 추가
+struct IsValidTestCase : CommandLineOption
 {
-    
+    bool expectedIsValid;
+};
+
+class CommandLineOptionTest : public ::testing::TestWithParam<IsValidTestCase>
+{
+};
+
+// 테스트 본문
+TEST_P(CommandLineOptionTest, IsValidReturnsExpectedValue)
+{
+    const auto& param = GetParam();
+
+    EXPECT_EQ(param.IsValid(), param.expectedIsValid)
+        << L"mName='" << param.mName
+        << L"' mShortName='" << param.mShortName
+        << L"' mDescription='" << param.mDescription << L"'";
 }
+
+// 테스트 케이스 목록 등록
+INSTANTIATE_TEST_SUITE_P(IsValidTests, CommandLineOptionTest, ::testing::Values(
+                             // All valid
+                             IsValidTestCase{ { L"--help", L"-h", L"Show help", false, false, nullptr }, true },
+                             // mName empty
+                             IsValidTestCase{ { L"", L"-h", L"Show help", false, false, nullptr }, false },
+                             // mShortName empty
+                             IsValidTestCase{ { L"--help", L"", L"Show help", false, false, nullptr }, false },
+                             // mDescription empty
+                             IsValidTestCase{ { L"--help", L"-h", L"", false, false, nullptr }, false },
+                             // All empty
+                             IsValidTestCase{ { L"", L"", L"", false, false, nullptr }, false }
+                         ));
+
+
+struct CommandLineParserTestCase
+{
+    std::vector<std::wstring> args;
+    eErrorCode expectedErrorCode;
+    bool expectedHandlerCalled;
+    std::wstring expectedValue;
+};
+
+class CommandLineParserParseTest : public ::testing::TestWithParam<CommandLineParserTestCase>
+{
+protected:
+    CommandLineParser parser;
+    std::wstring capturedValue;
+    bool handlerCalled = false;
+
+    void SetUp() override
+    {
+        capturedValue.clear();
+        handlerCalled = false;
+
+        // 기본 옵션 추가
+        AddTestOption(L"--test", L"-t", false, false);
+        AddTestOption(L"--exit", L"-e", false, true);
+        AddTestOption(L"--with-value", L"-w", true, false);
+
+        // 일반 옵션인데 handler == nullptr
+        std::ignore = parser.AddOption(CommandLineOption{
+            L"--no-handler", L"-n", L"Test option", false, false, nullptr
+            });
+
+        // mShortName만 있는 옵션
+        std::ignore = parser.AddOption(CommandLineOption{
+            L"-s", L"", L"Short only", false, false,
+            [&](const std::wstring& val)
+            {
+                handlerCalled = true;
+                capturedValue = val;
+            }
+            });
+
+        // 옵션 이름/짧은이름 같음
+        std::ignore = parser.AddOption(CommandLineOption{
+            L"--same", L"--same", L"Same names", true, false,
+            [&](const std::wstring& val)
+            {
+                handlerCalled = true;
+                capturedValue = val;
+            }
+            });
+    }
+
+    void AddTestOption(const std::wstring& name, const std::wstring& shortName, bool requiresValue, bool causesExit)
+    {
+        CommandLineOption opt;
+        opt.mName = name;
+        opt.mShortName = shortName;
+        opt.mDescription = L"Test option";
+        opt.mRequiresValue = requiresValue;
+        opt.mCausesExit = causesExit;
+        opt.mHandler = [&](const std::wstring& val)
+            {
+                handlerCalled = true;
+                capturedValue = val;
+            };
+        parser.AddOption(opt);
+    }
+};
+
+TEST_P(CommandLineParserParseTest, ReturnsExpectedResults)
+{
+    const CommandLineParserTestCase& param = GetParam();
+
+    const Error err = parser.Parse(param.args);
+
+    if (param.args.empty() == false)
+        SCOPED_TRACE(::testing::Message() << "Args: " << param.args[0]);
+
+    EXPECT_EQ(err.GetErrorCode(), param.expectedErrorCode);
+    EXPECT_EQ(handlerCalled, param.expectedHandlerCalled);
+    EXPECT_EQ(capturedValue, param.expectedValue);
+}
+
+INSTANTIATE_TEST_SUITE_P(ParseTests, CommandLineParserParseTest, ::testing::Values(
+    // Normal option processed
+    CommandLineParserTestCase{ { L"--test" }, eErrorCode::Succeeded, true, L"" },
+
+    // Exit option triggers EarlyExit
+    CommandLineParserTestCase{ { L"--exit" }, eErrorCode::EarlyExit, true, L"" },
+
+    // Unknown option
+    CommandLineParserTestCase{ { L"--unknown" }, eErrorCode::CommandLineArgumentNotFound, false, L"" },
+
+    // Option with value processed
+    CommandLineParserTestCase{ { L"--with-value", L"myvalue" }, eErrorCode::Succeeded, true, L"myvalue" },
+
+    // Option with value missing argument
+    CommandLineParserTestCase{ { L"--with-value" }, static_cast<eErrorCode>(E_INVALIDARG), false, L"" },
+
+    // 인자 없는 Parse (빈 vector)
+    CommandLineParserTestCase{ {}, eErrorCode::Succeeded, false, L"" },
+
+    // 종료 옵션인데 값이 필요한 경우 (빈 문자열 → E_INVALIDARG)
+    CommandLineParserTestCase{ { L"--with-value", L"" }, static_cast<eErrorCode>(E_INVALIDARG), false, L"" },
+
+    // 일반 옵션인데 handler == nullptr
+    CommandLineParserTestCase{ { L"--no-handler" }, eErrorCode::Succeeded, false, L"" },
+
+    // mShortName만 있는 옵션
+    CommandLineParserTestCase{ { L"-s", L"--slient" }, eErrorCode::CommandLineArgumentNotFound, false, L"" },
+
+    // 옵션 이름/짧은이름 같음
+    CommandLineParserTestCase{ { L"--same", L"val" }, eErrorCode::Succeeded, true, L"val" },
+
+    // 옵션 순서 반전 (종료 옵션 뒤쪽에 있음)
+    CommandLineParserTestCase{ { L"--test", L"--exit" }, eErrorCode::EarlyExit, true, L"" },
+
+    // 등록되지 않은 인자 무시됨 (처음 옵션 정상 처리 후 unknown 에서 실패)
+    CommandLineParserTestCase{ { L"--test", L"--unknown" }, eErrorCode::CommandLineArgumentNotFound, false, L"" },
+
+    // 매우 긴 인자 문자열
+    CommandLineParserTestCase{ { L"--with-value", std::wstring(10000, L'A') }, eErrorCode::Succeeded, true, std::wstring(10000, L'A') }
+));
+
 
 // 정상 옵션 등록
 // 중복 옵션 등록 실패

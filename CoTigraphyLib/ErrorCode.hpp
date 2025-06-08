@@ -1,5 +1,5 @@
 ﻿// \file ErrorCode.hpp
-// \last_updated 2025-06-05
+// \last_updated 2025-06-08
 // \author Oh Sungsik <ohsungsik@outlook.com>
 // \copyright (C) 2025. Oh Sungsik. All rights reserved.
 
@@ -163,4 +163,4 @@ namespace CoTigraphy
     static_assert(sizeof(eErrorCode) == sizeof(HRESULT));   // eErrorCode는 HRESULT의 확장이기 때문에 크기가 동일해야 한다.
 
 #undef MAKE_ERRORCODE
-}
+}   // namespace CoTigraphy

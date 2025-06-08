@@ -1,5 +1,5 @@
 ﻿// \file Error.cpp
-// \last_updated 2025-06-05
+// \last_updated 2025-06-08
 // \author Oh Sungsik <ohsungsik@outlook.com>
 // \copyright (C) 2025. Oh Sungsik. All rights reserved.
 
@@ -60,6 +60,11 @@ namespace CoTigraphy
     Error::~Error()
         = default;
 
+    bool Error::operator==(const eErrorCode& rhs) const noexcept
+    {
+        return mErrorCode == rhs;
+    }
+
 
     std::wstring Error::GetErrorMessage() const
     {
@@ -89,4 +94,4 @@ namespace CoTigraphy
 
     Error::Error() noexcept
     = default;
-}
+}   // namespace CoTigraphy

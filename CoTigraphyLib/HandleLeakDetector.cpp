@@ -1,5 +1,5 @@
 ﻿// \file HandleLeakDetector.cpp
-// \last_updated 2025-06-05
+// \last_updated 2025-06-08
 // \author Oh Sungsik <ohsungsik@outlook.com>
 // \copyright (C) 2025. Oh Sungsik. All rights reserved.
 
@@ -91,4 +91,4 @@ namespace CoTigraphy
         if (leakedCount > leakedThreshold && IsDebuggerPresent())
             DebugBreak();
     }
-}
+}   // namespace CoTigraphy

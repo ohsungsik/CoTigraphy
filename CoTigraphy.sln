@@ -44,6 +44,12 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "googlemock", "ThirdParty\go
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "googletest", "ThirdParty\googletest-1.17.0\googletest\googletest.vcxproj", "{6AA95988-BCF0-4C31-A55E-22AE3D1AB019}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{0DF2D962-986A-45A1-B48F-2ED949B4C686}"
+	ProjectSection(SolutionItems) = preProject
+		docs\API Contract Design Guidelines.md = docs\API Contract Design Guidelines.md
+		docs\Method Documentation Standards.md = docs\Method Documentation Standards.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|ARM64 = Debug|ARM64

@@ -12,3 +12,5 @@
 
 
 #include "Assert.hpp"
+
+#include "../CoTigraphyLib/Error.hpp"

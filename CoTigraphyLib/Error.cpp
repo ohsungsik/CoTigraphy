@@ -60,6 +60,11 @@ namespace CoTigraphy
     Error::~Error()
         = default;
 
+    bool Error::operator==(const Error& rhs) const noexcept
+    {
+        return mErrorCode == rhs.mErrorCode;
+    }
+
     bool Error::operator==(const eErrorCode& rhs) const noexcept
     {
         return mErrorCode == rhs;

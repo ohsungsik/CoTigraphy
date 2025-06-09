@@ -9,6 +9,8 @@
 #include <string>
 #include <vector>
 
+class UnitTest_CommandLineParser;
+
 namespace CoTigraphy
 {
     // Describes a single command-line option
@@ -30,7 +32,7 @@ namespace CoTigraphy
     /**
      * \brief 커맨드 라인 옵션을 등록하고 파싱 하는 클래스
      * \contract weak 모든 입력을 검사하고 오류 코드로 처리함
-     * * \pre 모든 옵션은 AddOption 호출을 통해 사전에 등록되어야 함.
+     * \pre 모든 옵션은 AddOption 호출을 통해 사전에 등록되어야 함.
      * \details
      *  - 외부에서 받은 argc/argv를 파싱하여 등록된 옵션을 처리
      *  - Help 메시지를 출력하거나, 옵션에 따라 핸들러를 호출
@@ -50,9 +52,9 @@ namespace CoTigraphy
 
         /**
          * \brief 새 커맨트 라인 옵션 등록
-         * \param option 등록할 커맨드 라인 옵션 객체, 유효한 욥션이여야 함.
+         * \contract strong
+         * \param option 등록할 커맨드 라인 옵션 객체, 유효한 옵션이여야 함.
          * \return 등록 성공 여부 반환
-         * \pre option.IsValid() == true
          */
         _Success_(static_cast<eErrorCode>(return) == eErrorCode::Succeeded)
         [[nodiscard]] Error AddOption(const CommandLineOption& option);
@@ -64,7 +66,6 @@ namespace CoTigraphy
          * \param argc 인자 갯수
          * \param argv 인자 문자열 배열. argv[0]은 프로그램 경로로 판단하며, 나머지가 파싱 대상
          * \return 파싱 성공 여부 오류 코드 반환
-         * \pre argc >= 1, argv != nullptr
          */
         _Success_(static_cast<eErrorCode>(return) == eErrorCode::Succeeded)
         [[nodiscard]] Error Parse(_In_ const int argc, _In_reads_opt_z_(argc) wchar_t* argv[]);
@@ -100,9 +101,7 @@ namespace CoTigraphy
         [[nodiscard]] Error ProcessToken(_In_ const std::vector<std::wstring>& args, _Inout_ size_t& index);
 
     private:
-        // Store options in vector for ordered help output
         std::vector<CommandLineOption> mOptions;
-        // Map each name to the index in mOptions (avoids duplicate storage)
         std::unordered_map<std::wstring, size_t> mLookup;
     };
 }

@@ -22,7 +22,6 @@
     <ClInclude Include="resource.h" />
     <ClInclude Include="VersionInfo.hpp" />
     <ClInclude Include="CommandLineParser.hpp" />
-    <ClInclude Include="Assert.hpp" />
     <ClInclude Include="ErrorCode.hpp" />
     <ClInclude Include="Error.hpp" />
     <ClInclude Include="CoTigraphy.hpp" />

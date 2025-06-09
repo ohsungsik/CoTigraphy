@@ -226,7 +226,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Assert.hpp" />
     <ClInclude Include="BuildInfo.hpp" />
     <ClInclude Include="CommandLineParser.hpp" />
     <ClInclude Include="CoTigraphy.hpp" />

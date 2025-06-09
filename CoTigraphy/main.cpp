@@ -8,12 +8,12 @@
 
 int wmain()
 {
-    const CoTigraphy::Error error = CoTigraphy::Initialize();
-    if (error.IsFailed())
-        return static_cast<int>(error.GetErrorCode());
+	const CoTigraphy::Error error = CoTigraphy::Initialize();
+	if (error.IsFailed())
+		return static_cast<int>(error.GetErrorCode());
 
 
-    CoTigraphy::Uninitialize();
+	CoTigraphy::Uninitialize();
 
-    return 0;
+	return 0;
 }

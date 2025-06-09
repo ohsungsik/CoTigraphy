@@ -34,6 +34,7 @@ namespace CoTigraphy
 
         ~Error();
 
+        bool operator==(const Error& rhs) const noexcept;
         bool operator==(const eErrorCode& rhs) const noexcept;
 
         [[nodiscard]] explicit operator eErrorCode() const noexcept
@@ -66,7 +67,7 @@ namespace CoTigraphy
 
 #define MAKE_ERROR(ErrorCode) CoTigraphy::Error::FromErrorCode(ErrorCode, __FILEW__, __LINE__)
 #define MAKE_ERROR_FROM_HRESULT(ErrorCode) CoTigraphy::Error::FromHResult(ErrorCode, __FILEW__, __LINE__)
-#define MAKE_ERROR_FROM_WIN32(ErrorCode) MAKE_ERROR_FROM_HRESULT(HRESULT_FROM_WIN32(Win32ErrorCode))
+#define MAKE_ERROR_FROM_WIN32(ErrorCode) MAKE_ERROR_FROM_HRESULT(HRESULT_FROM_WIN32(ErrorCode))
 #define MAKE_ERROR_FROM_LAST_WIN32_ERROR() MAKE_ERROR_FROM_WIN32(::GetLastError())
 
 #define RETURN_IF_FAILED(expr) if (const CoTigraphy::Error _error = (expr); \

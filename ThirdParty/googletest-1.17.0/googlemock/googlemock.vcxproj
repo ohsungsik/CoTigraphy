@@ -101,33 +101,33 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
-    <OutDir>$(SolutionDir)..\out\</OutDir>
-    <IntDir>$(SolutionDir)out\obj\$(ShortProjectName)\$(Configuration)\$(PlatformShortName)\</IntDir>
+    <OutDir>$(ProjectDir)..\out\</OutDir>
+    <IntDir>$(ProjectDir)out\obj\$(ShortProjectName)\$(Configuration)\$(PlatformShortName)\</IntDir>
     <TargetName>$(ProjectName).$(PlatformShortName).$(Configuration)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
-    <OutDir>$(SolutionDir)..\out\</OutDir>
-    <IntDir>$(SolutionDir)out\obj\$(ShortProjectName)\$(Configuration)\$(PlatformShortName)\</IntDir>
+    <OutDir>$(ProjectDir)..\out\</OutDir>
+    <IntDir>$(ProjectDir)out\obj\$(ShortProjectName)\$(Configuration)\$(PlatformShortName)\</IntDir>
     <TargetName>$(ProjectName).$(PlatformShortName).$(Configuration)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>$(SolutionDir)..\out\</OutDir>
-    <IntDir>$(SolutionDir)out\obj\$(ShortProjectName)\$(Configuration)\$(PlatformShortName)\</IntDir>
+    <OutDir>$(ProjectDir)..\out\</OutDir>
+    <IntDir>$(ProjectDir)out\obj\$(ShortProjectName)\$(Configuration)\$(PlatformShortName)\</IntDir>
     <TargetName>$(ProjectName).$(PlatformShortName).$(Configuration)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>$(SolutionDir)..\out\</OutDir>
-    <IntDir>$(SolutionDir)out\obj\$(ShortProjectName)\$(Configuration)\$(PlatformShortName)\</IntDir>
+    <OutDir>$(ProjectDir)..\out\</OutDir>
+    <IntDir>$(ProjectDir)out\obj\$(ShortProjectName)\$(Configuration)\$(PlatformShortName)\</IntDir>
     <TargetName>$(ProjectName).$(PlatformShortName).$(Configuration)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>$(SolutionDir)..\out\</OutDir>
-    <IntDir>$(SolutionDir)out\obj\$(ShortProjectName)\$(Configuration)\$(PlatformShortName)\</IntDir>
+    <OutDir>$(ProjectDir)..\out\</OutDir>
+    <IntDir>$(ProjectDir)out\obj\$(ShortProjectName)\$(Configuration)\$(PlatformShortName)\</IntDir>
     <TargetName>$(ProjectName).$(PlatformShortName).$(Configuration)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>$(SolutionDir)..\out\</OutDir>
-    <IntDir>$(SolutionDir)out\obj\$(ShortProjectName)\$(Configuration)\$(PlatformShortName)\</IntDir>
+    <OutDir>$(ProjectDir)..\out\</OutDir>
+    <IntDir>$(ProjectDir)out\obj\$(ShortProjectName)\$(Configuration)\$(PlatformShortName)\</IntDir>
     <TargetName>$(ProjectName).$(PlatformShortName).$(Configuration)</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">

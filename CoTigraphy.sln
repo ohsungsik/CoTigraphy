@@ -9,6 +9,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CoTigraphy", "CoTigraphy\Co
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CoTigraphyLib", "CoTigraphyLib\CoTigraphyLib.vcxproj", "{43201E48-7AF3-4CD7-93D2-62706B16081E}"
+	ProjectSection(ProjectDependencies) = postProject
+		{77F61357-7425-4EAB-B64F-EB53E802A236} = {77F61357-7425-4EAB-B64F-EB53E802A236}
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
 	ProjectSection(SolutionItems) = preProject
@@ -49,6 +52,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{0DF2D962-9
 		docs\API Contract Design Guidelines.md = docs\API Contract Design Guidelines.md
 		docs\Method Documentation Standards.md = docs\Method Documentation Standards.md
 	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "curl", "ThirdParty\curl-8.14.1\curl.vcxproj", "{77F61357-7425-4EAB-B64F-EB53E802A236}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -120,6 +125,18 @@ Global
 		{6AA95988-BCF0-4C31-A55E-22AE3D1AB019}.Release|x64.Build.0 = Release|x64
 		{6AA95988-BCF0-4C31-A55E-22AE3D1AB019}.Release|x86.ActiveCfg = Release|Win32
 		{6AA95988-BCF0-4C31-A55E-22AE3D1AB019}.Release|x86.Build.0 = Release|Win32
+		{77F61357-7425-4EAB-B64F-EB53E802A236}.Debug|ARM64.ActiveCfg = Debug|ARM64
+		{77F61357-7425-4EAB-B64F-EB53E802A236}.Debug|ARM64.Build.0 = Debug|ARM64
+		{77F61357-7425-4EAB-B64F-EB53E802A236}.Debug|x64.ActiveCfg = Debug|x64
+		{77F61357-7425-4EAB-B64F-EB53E802A236}.Debug|x64.Build.0 = Debug|x64
+		{77F61357-7425-4EAB-B64F-EB53E802A236}.Debug|x86.ActiveCfg = Debug|Win32
+		{77F61357-7425-4EAB-B64F-EB53E802A236}.Debug|x86.Build.0 = Debug|Win32
+		{77F61357-7425-4EAB-B64F-EB53E802A236}.Release|ARM64.ActiveCfg = Release|ARM64
+		{77F61357-7425-4EAB-B64F-EB53E802A236}.Release|ARM64.Build.0 = Release|ARM64
+		{77F61357-7425-4EAB-B64F-EB53E802A236}.Release|x64.ActiveCfg = Release|x64
+		{77F61357-7425-4EAB-B64F-EB53E802A236}.Release|x64.Build.0 = Release|x64
+		{77F61357-7425-4EAB-B64F-EB53E802A236}.Release|x86.ActiveCfg = Release|Win32
+		{77F61357-7425-4EAB-B64F-EB53E802A236}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -127,6 +144,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{FBF02AD5-0288-4AB5-8525-F79E3F87F8E5} = {A7092942-D270-45BF-8911-0A5575E2434B}
 		{6AA95988-BCF0-4C31-A55E-22AE3D1AB019} = {A7092942-D270-45BF-8911-0A5575E2434B}
+		{77F61357-7425-4EAB-B64F-EB53E802A236} = {A7092942-D270-45BF-8911-0A5575E2434B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B61E9C2-4C3D-4DC3-9590-4E2904B47B4C}

@@ -35,13 +35,6 @@ if not defined VCINSTALLDIR (
     )
 )
 
-@REM 외부 라이브러리 빌드
-cmd /C "set "PAUSE_DISABLED=1" && "%SCRIPT_DIR%\ThirdParty\build.bat"
-if %errorlevel% neq 0 (
-    echo Error: Failed to build third party library
-    goto cleanup_failed
-)
-
 @REM 빌드 대상 구성
 set "CONFIGS=Debug Release"
 set "PLATFORMS=x64 x86 ARM64"

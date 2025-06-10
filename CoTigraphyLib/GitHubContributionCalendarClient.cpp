@@ -63,7 +63,7 @@ namespace CoTigraphy
 
         // GraphQL Query Payload
         const char* graphqlQuery = R"({
-            "query": "query { user(login: \"ohsungsik\") { contributionsCollection { contributionCalendar { totalContributions weeks { contributionDays { date contributionCount } } } } } }"
+            "query": "query { user(login: \"ohsungsik\") { contributionsCollection { contributionCalendar { totalContributions weeks { contributionDays { date contributionCount color } } } } } }"
         })";
 
         std::vector<char> responseBuffer;
@@ -80,9 +80,9 @@ namespace CoTigraphy
         curl_easy_setopt(mCurl, CURLOPT_WRITEFUNCTION, WriteCallback);
         curl_easy_setopt(mCurl, CURLOPT_WRITEDATA, &responseBuffer);
 
-        curl_easy_setopt(mCurl, CURLOPT_FORBID_REUSE, 1L);  //  connection 재사용 방지
+        curl_easy_setopt(mCurl, CURLOPT_FORBID_REUSE, 1L); //  connection 재사용 방지
         curl_easy_setopt(mCurl, CURLOPT_FRESH_CONNECT, 1L); // connection pool에서 즉시 종료
-        curl_easy_setopt(mCurl, CURLOPT_SSL_SESSIONID_CACHE, 0L);   // Schannel 사용 시 강제 cleanup
+        curl_easy_setopt(mCurl, CURLOPT_SSL_SESSIONID_CACHE, 0L); // Schannel 사용 시 강제 cleanup
 
         const CURLcode res = curl_easy_perform(mCurl);
 
@@ -109,10 +109,12 @@ namespace CoTigraphy
             {
                 const std::string dateStr = std::string(day["date"].get_string().value());
                 const uint64_t count = day["contributionCount"].get_uint64().value();
+                const std::string color = std::string(day["color"].get_string().value());
 
                 ContributionDay contributionDay;
                 contributionDay.mDate = ParseDateString(dateStr);
                 contributionDay.mCount = count;
+                contributionDay.mColor = Utf8ToWideString(color);
 
                 contributionDays.push_back(contributionDay);
             }

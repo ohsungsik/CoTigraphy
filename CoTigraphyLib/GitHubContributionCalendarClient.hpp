@@ -17,6 +17,7 @@ namespace CoTigraphy
     {
         std::tm mDate;
         uint64_t mCount;
+        std::wstring mColor;
     };
 
     class GitHubContributionCalendarClient final

@@ -26,8 +26,8 @@ namespace CoTigraphy
     constexpr int frame_count = 10;
     constexpr int frame_delay_ms = 100; // 100ms per frame
 
-    constexpr int cellSize = 12; // 각 칸 크기 (px)
-    constexpr int cellMargin = 2; // 칸 간격 (px)
+    constexpr int cellSize = 10; // 각 칸 크기 (px)
+    constexpr int cellMargin = 3; // 칸 간격 (px)
     constexpr int daysPerWeek = 7; // Sunday~Saturday (7 rows)
     constexpr int imageHeight = daysPerWeek * (cellSize + cellMargin);
 
@@ -36,6 +36,7 @@ namespace CoTigraphy
         int weekIndex;
         int weekday; // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
         uint64_t count;
+        COLORREF color; // RGBA
     };
 
     // GitHub는 보통 "Sunday" 시작
@@ -77,6 +78,18 @@ namespace CoTigraphy
                 rgba[index + 3] = a;
             }
         }
+    }
+
+    COLORREF HexToColorRef(const std::wstring& hex)
+    {
+        POSTCONDITION(hex.length() == 7);
+        POSTCONDITION(hex[0] == L'#');
+
+        unsigned int r = std::stoi(hex.substr(1, 2), nullptr, 16);
+        unsigned int g = std::stoi(hex.substr(3, 2), nullptr, 16);
+        unsigned int b = std::stoi(hex.substr(5, 2), nullptr, 16);
+
+        return RGB(r, g, b); // Macro: ((BYTE)(r) | ((BYTE)(g) << 8) | ((BYTE)(b) << 16))
     }
 
     void GetColorForCount(uint64_t count, uint8_t& r, uint8_t& g, uint8_t& b)
@@ -146,7 +159,7 @@ namespace CoTigraphy
         // WebPConfig 설정
         WebPConfig config;
         WebPConfigInit(&config);
-        config.quality = 90.0f;
+        config.quality = 100.0f;
 
         WebPPicture pic;
         WebPPictureInit(&pic);
@@ -156,6 +169,13 @@ namespace CoTigraphy
 
 
         std::vector<uint8_t> rgba(imageWidth * imageHeight * 4, 0); // 초기화 (배경 검정)
+        for (size_t i = 0; i < imageWidth * imageHeight; ++i)
+        {
+            rgba[i * 4 + 0] = 0x01; // R
+            rgba[i * 4 + 1] = 0x04; // G
+            rgba[i * 4 + 2] = 0x09; // B
+            rgba[i * 4 + 3] = 0x0d; // A
+        }
 
         // 그리기
         for (const auto& cell : grid)
@@ -163,8 +183,9 @@ namespace CoTigraphy
             int x = cell.weekIndex * (cellSize + cellMargin);
             int y = cell.weekday * (cellSize + cellMargin);
 
-            uint8_t r, g, b;
-            GetColorForCount(cell.count, r, g, b);
+            uint8_t r = GetRValue(cell.color);
+            uint8_t g = GetGValue(cell.color);
+            uint8_t b = GetBValue(cell.color);
 
             DrawCell(rgba.data(), imageWidth, x, y, r, g, b);
         }
@@ -174,7 +195,8 @@ namespace CoTigraphy
         (r);
 
         // 프레임 추가
-        if (!WebPAnimEncoderAdd(enc, &pic, 0, &config)) {
+        if (!WebPAnimEncoderAdd(enc, &pic, 0, &config))
+        {
             ASSERT(false);
         }
 
@@ -184,7 +206,8 @@ namespace CoTigraphy
         // WebP 애니메이션 출력
         WebPData webp_data;
         WebPDataInit(&webp_data);
-        if (!WebPAnimEncoderAssemble(enc, &webp_data)) {
+        if (!WebPAnimEncoderAssemble(enc, &webp_data))
+        {
             fprintf(stderr, "Failed to assemble WebP animation\n");
             ASSERT(false);
         }
@@ -192,12 +215,14 @@ namespace CoTigraphy
         // 파일로 저장
         FILE* f;
         _wfopen_s(&f, filename, L"wb");
-        if (f) {
+        if (f)
+        {
             fwrite(webp_data.bytes, webp_data.size, 1, f);
             fclose(f);
             printf("Saved animation.webp\n");
         }
-        else {
+        else
+        {
             fprintf(stderr, "Failed to open output file\n");
         }
 
@@ -205,7 +230,6 @@ namespace CoTigraphy
         WebPDataClear(&webp_data);
         WebPAnimEncoderDelete(enc);
         WebPPictureFree(&pic);
-
     }
 
     // 애니메이션 webp
@@ -216,7 +240,8 @@ namespace CoTigraphy
         WebPAnimEncoderOptionsInit(&enc_options);
 
         WebPAnimEncoder* enc = WebPAnimEncoderNew(width, height, &enc_options);
-        if (!enc) {
+        if (!enc)
+        {
             fprintf(stderr, "Failed to create WebPAnimEncoder\n");
         }
 
@@ -232,7 +257,8 @@ namespace CoTigraphy
 
         uint8_t* rgba = (uint8_t*)malloc(width * height * 4);
 
-        for (int frame = 0; frame < frame_count; ++frame) {
+        for (int frame = 0; frame < frame_count; ++frame)
+        {
             ClearBuffer(rgba);
 
             // 움직이는 사각형 그리기
@@ -243,7 +269,8 @@ namespace CoTigraphy
             WebPPictureImportRGBA(&pic, rgba, width * 4);
 
             // 프레임 추가
-            if (!WebPAnimEncoderAdd(enc, &pic, frame * frame_delay_ms, &config)) {
+            if (!WebPAnimEncoderAdd(enc, &pic, frame * frame_delay_ms, &config))
+            {
                 fprintf(stderr, "Failed to add frame %d\n", frame);
             }
         }
@@ -254,7 +281,8 @@ namespace CoTigraphy
         // WebP 애니메이션 출력
         WebPData webp_data;
         WebPDataInit(&webp_data);
-        if (!WebPAnimEncoderAssemble(enc, &webp_data)) {
+        if (!WebPAnimEncoderAssemble(enc, &webp_data))
+        {
             fprintf(stderr, "Failed to assemble WebP animation\n");
         }
 
@@ -262,12 +290,14 @@ namespace CoTigraphy
         // 파일로 저장
         FILE* f;
         _wfopen_s(&f, L"test.webp", L"wb");
-        if (f) {
+        if (f)
+        {
             fwrite(webp_data.bytes, webp_data.size, 1, f);
             fclose(f);
             printf("Saved animation.webp\n");
         }
-        else {
+        else
+        {
             fprintf(stderr, "Failed to open output file\n");
         }
 
@@ -322,6 +352,7 @@ namespace CoTigraphy
             cell.weekIndex = GetWeekIndex(day.mDate, startDate);
             cell.weekday = GetWeekday(day.mDate);
             cell.count = day.mCount;
+            cell.color = HexToColorRef(day.mColor);
 
             maxWeeks = max(maxWeeks, cell.weekIndex);
 

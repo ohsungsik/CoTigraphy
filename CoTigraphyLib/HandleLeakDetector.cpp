@@ -1,5 +1,5 @@
 ﻿// \file HandleLeakDetector.cpp
-// \last_updated 2025-06-08
+// \last_updated 2025-06-10
 // \author Oh Sungsik <ohsungsik@outlook.com>
 // \copyright (C) 2025. Oh Sungsik. All rights reserved.
 
@@ -63,9 +63,12 @@ namespace CoTigraphy
         DWORD curHandleCount = 0;
         ::GetProcessHandleCount(hProcess, &curHandleCount);
 
-        // 일부 시스템 콜이나 라이브러리 내부에서 짧게 쓰는 핸들을 최종적으로 해제시키지
-        // 못하는 경우가 있으므로 "10개 이하"는 허용치로 설정
-        constexpr DWORD leakedThreshold = 10;
+        /// 일부 시스템 콜이나 라이브러리 내부에서 짧게 쓰는 핸들을 최종적으로 해제시키지
+        /// 못하는 경우가 있으므로 허용치 설정
+        /// 
+        /// HTTPS 프로토콜을 사용하는 경우 CURL 내부에서 Schannel을 사용하여 처리됨
+        /// 이 경우 종료 시 OS에서 해제를 관리하기 때문에 OS에의해 완전히 정리되기 전까지 핸들이 남아있어 핸들릭 처럼 보임...
+        constexpr DWORD leakedThreshold = 100;
         const DWORD leakedCount = curHandleCount - gStartHandleCount;
 
         constexpr int labelWidth = 22; // ':' 이전까지의 라벨 고정 폭

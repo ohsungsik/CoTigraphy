@@ -1,5 +1,5 @@
 ﻿// \file MemoryLeakDetector.cpp
-// \last_updated 2025-06-08
+// \last_updated 2025-06-10
 // \author Oh Sungsik <ohsungsik@outlook.com>
 // \copyright (C) 2025. Oh Sungsik. All rights reserved.
 
@@ -69,6 +69,7 @@ namespace CoTigraphy
 #ifndef _DEBUG
 		return;
 #endif
+
         const int ret = atexit(OnProcessExit);
 
         if (ret != 0 && IsDebuggerPresent())
@@ -80,34 +81,8 @@ namespace CoTigraphy
 
     void MemoryLeakDetector::OnProcessExit()
     {
-        std::wostringstream oss;
-
-        // 헤더 출력
-        oss << L"[MemoryLeak] ==== Memory Leak Report ========\n";
-
-        // 헤더 출력
-        OutputDebugStringW(oss.str().c_str());
-        oss = {};
-
-        // 상황별 메시지 출력
-        oss << L"[MemoryLeak]   ";
         // 메모리 릭 여부 판단
         const bool leakDetected = _CrtDumpMemoryLeaks();
-        if (!leakDetected)
-        {
-            oss << L"No memory leak detected\n";
-        }
-        else
-        {
-            oss << L"Memory leaks detected! Check Visual Studio output.\n";
-        }
-
-        // 푸터 출력
-        oss << L"[MemoryLeak] ================================\n";
-
-        // 출력
-        OutputDebugStringW(oss.str().c_str());
-
         // 디버거가 연결된 상태에서 릭이 감지된 경우 중단
         const bool debuggerAttached = (IsDebuggerPresent() == TRUE);
         if (leakDetected && debuggerAttached)

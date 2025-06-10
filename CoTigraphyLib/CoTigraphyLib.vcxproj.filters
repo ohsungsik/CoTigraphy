@@ -13,6 +13,7 @@
     <ClCompile Include="CommandLineParser.cpp" />
     <ClCompile Include="Error.cpp" />
     <ClCompile Include="CoTigraphy.cpp" />
+    <ClCompile Include="GitHubContributionCalendarClient.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MemoryLeakDetector.hpp" />
@@ -25,5 +26,6 @@
     <ClInclude Include="ErrorCode.hpp" />
     <ClInclude Include="Error.hpp" />
     <ClInclude Include="CoTigraphy.hpp" />
+    <ClInclude Include="GitHubContributionCalendarClient.hpp" />
   </ItemGroup>
 </Project>

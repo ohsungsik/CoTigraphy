@@ -36,7 +36,7 @@ if not defined VCINSTALLDIR (
 )
 
 @REM 외부 라이브러리 목록
-set "THIRD_PARTIES=googletest-1.17.0 curl-8.14.1 simdjson-3.13.0"
+set "THIRD_PARTIES=googletest-1.17.0 curl-8.14.1 simdjson-3.13.0 webp-1.5.0"
 
 for %%l in (%THIRD_PARTIES%) do (
     set "BUILD_SCRIPT=%SCRIPT_DIR%%%l\build.bat"

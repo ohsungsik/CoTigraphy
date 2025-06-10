@@ -10,109 +10,289 @@
 #include <shellapi.h>
 #include <string_view>
 
-#include <curl/curl.h>
+#include <webp/encode.h>
+#include <webp/mux.h>
+#include <webp/mux_types.h>
 
+#include "GitHubContributionCalendarClient.hpp"
 #include "HandleLeakDetector.hpp"
 #include "MemoryLeakDetector.hpp"
 #include "VersionInfo.hpp"
 
 namespace CoTigraphy
 {
-    // 서버 응답을 버퍼에 저장하기 위한 콜백 함수
-    static size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* userp)
+    constexpr int width = 256;
+    constexpr int height = 256;
+    constexpr int frame_count = 10;
+    constexpr int frame_delay_ms = 100; // 100ms per frame
+
+    constexpr int cellSize = 12; // 각 칸 크기 (px)
+    constexpr int cellMargin = 2; // 칸 간격 (px)
+    constexpr int daysPerWeek = 7; // Sunday~Saturday (7 rows)
+    constexpr int imageHeight = daysPerWeek * (cellSize + cellMargin);
+
+    struct ContributionCell
     {
-        size_t totalSize = size * nmemb;
-        char** responsePtr = (char**)userp;
-        size_t oldSize = strlen(*responsePtr);
+        int weekIndex;
+        int weekday; // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+        uint64_t count;
+    };
 
-        char* buffer = (char*)realloc(*responsePtr, oldSize + totalSize + 1);
-        if (buffer == NULL)
-        {
-            printf("Out of memory!\n");
-            return 0;
-        }
+    // GitHub는 보통 "Sunday" 시작
+    int GetWeekIndex(const std::tm& date, const std::tm& startDate)
+    {
+        // days since startDate
+        std::time_t tDate = std::mktime(const_cast<std::tm*>(&date));
+        std::time_t tStart = std::mktime(const_cast<std::tm*>(&startDate));
 
-        *responsePtr = buffer;
-
-        // 새 데이터 복사 (기존 데이터 뒤에 추가)
-        memcpy(buffer + oldSize, contents, totalSize);
-        buffer[oldSize + totalSize] = '\0'; // 널 종료
-
-        return totalSize;
+        int daysDiff = static_cast<int>(std::difftime(tDate, tStart) / (60 * 60 * 24));
+        return daysDiff / 7;
     }
 
-    void TEST_CURL()
+    int GetWeekday(const std::tm& date)
     {
-        CURL* curl = nullptr;
-        CURLcode res;
-
-        const char* const token = "<github_token>";
-        const char* const url = "https://api.github.com/user";
-
-        // 응답 데이터를 저장할 버퍼
-        char* response = (char*)malloc(1);
-        if (!response)
-        {
-            printf("Out of memory!\n");
-            return;
-        }
-        response[0] = '\0';
-
-        // curl 전역 초기화
-        curl_global_init(CURL_GLOBAL_DEFAULT);
-
-        // curl 핸들 생성
-        curl = curl_easy_init();
-        if (curl)
-        {
-            // HTTP 헤더 준비
-            struct curl_slist* headers = nullptr;
-            char authHeader[512];
-            snprintf(authHeader, sizeof(authHeader), "Authorization: Bearer %s", token);
-
-            headers = curl_slist_append(headers, authHeader);
-            headers = curl_slist_append(headers, "User-Agent: MyLibcurlClient/1.0"); // GitHub는 User-Agent 필수
-
-            // 옵션 설정
-            curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L); // 디버그 로그 출력
-            curl_easy_setopt(curl, CURLOPT_URL, url);
-            curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-
-            // 응답 콜백 설정
-            curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-            curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
-
-            // 요청 실행
-            res = curl_easy_perform(curl);
-
-            // 에러 확인
-            if (res != CURLE_OK)
-            {
-                fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
-            }
-            else
-            {
-                // 성공 시 응답 출력
-                printf("Response:\n%s\n", response);
-            }
-
-            // 정리
-            curl_slist_free_all(headers);
-            curl_easy_cleanup(curl);
-        }
-
-        free(response);
-        curl_global_cleanup();
+        // std::tm.tm_wday: 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+        return date.tm_wday;
     }
-        Error Initialize()
+
+    // RGBA 버퍼를 초기화 (검은색 배경)
+    void ClearBuffer(uint8_t* rgba)
+    {
+        memset(rgba, 0, width * height * 4);
+    }
+
+    // 사각형 그리기 (RGBA 버퍼에 직접 그리기)
+    void DrawRect(uint8_t* rgba, int x, int y, int w, int h, uint8_t r, uint8_t g, uint8_t b, uint8_t a)
+    {
+        for (int j = y; j < y + h; ++j)
+        {
+            if (j < 0 || j >= height) continue;
+            for (int i = x; i < x + w; ++i)
+            {
+                if (i < 0 || i >= width) continue;
+                int index = (j * width + i) * 4;
+                rgba[index + 0] = r;
+                rgba[index + 1] = g;
+                rgba[index + 2] = b;
+                rgba[index + 3] = a;
+            }
+        }
+    }
+
+    void GetColorForCount(uint64_t count, uint8_t& r, uint8_t& g, uint8_t& b)
+    {
+        if (count == 0)
+        {
+            r = g = b = 20; // Dark gray
+        }
+        else if (count < 5)
+        {
+            r = 0;
+            g = 64;
+            b = 0;
+        }
+        else if (count < 10)
+        {
+            r = 0;
+            g = 128;
+            b = 0;
+        }
+        else if (count < 20)
+        {
+            r = 0;
+            g = 192;
+            b = 0;
+        }
+        else
+        {
+            r = 0;
+            g = 255;
+            b = 0;
+        }
+    }
+
+    void DrawCell(uint8_t* rgba, int imgWidth, int x, int y, uint8_t r, uint8_t g, uint8_t b)
+    {
+        for (int j = 0; j < cellSize; ++j)
+        {
+            for (int i = 0; i < cellSize; ++i)
+            {
+                int px = x + i;
+                int py = y + j;
+
+                if (px < 0 || px >= imgWidth || py < 0 || py >= imageHeight) continue;
+
+                int index = (py * imgWidth + px) * 4;
+                rgba[index + 0] = r;
+                rgba[index + 1] = g;
+                rgba[index + 2] = b;
+                rgba[index + 3] = 255;
+            }
+        }
+    }
+
+    void SaveStaticWebP(const std::vector<ContributionCell>& grid, int maxWeeks, const wchar_t* filename)
+    {
+        const int weeks = maxWeeks;
+
+        const int imageWidth = weeks * (cellSize + cellMargin);
+
+        WebPAnimEncoderOptions enc_options;
+        WebPAnimEncoderOptionsInit(&enc_options);
+
+        WebPAnimEncoder* enc = WebPAnimEncoderNew(imageWidth, imageHeight, &enc_options);
+        ASSERT(enc);
+
+        // WebPConfig 설정
+        WebPConfig config;
+        WebPConfigInit(&config);
+        config.quality = 90.0f;
+
+        WebPPicture pic;
+        WebPPictureInit(&pic);
+        pic.width = imageWidth;
+        pic.height = imageHeight;
+        pic.use_argb = 1;
+
+
+        std::vector<uint8_t> rgba(imageWidth * imageHeight * 4, 0); // 초기화 (배경 검정)
+
+        // 그리기
+        for (const auto& cell : grid)
+        {
+            int x = cell.weekIndex * (cellSize + cellMargin);
+            int y = cell.weekday * (cellSize + cellMargin);
+
+            uint8_t r, g, b;
+            GetColorForCount(cell.count, r, g, b);
+
+            DrawCell(rgba.data(), imageWidth, x, y, r, g, b);
+        }
+
+        // RGBA → WebPPicture 로 변환
+        int r = WebPPictureImportRGBA(&pic, rgba.data(), imageWidth * 4);
+        (r);
+
+        // 프레임 추가
+        if (!WebPAnimEncoderAdd(enc, &pic, 0, &config)) {
+            ASSERT(false);
+        }
+
+        // 마지막 frame 마킹
+        WebPAnimEncoderAdd(enc, NULL, 0, NULL);
+
+        // WebP 애니메이션 출력
+        WebPData webp_data;
+        WebPDataInit(&webp_data);
+        if (!WebPAnimEncoderAssemble(enc, &webp_data)) {
+            fprintf(stderr, "Failed to assemble WebP animation\n");
+            ASSERT(false);
+        }
+
+        // 파일로 저장
+        FILE* f;
+        _wfopen_s(&f, filename, L"wb");
+        if (f) {
+            fwrite(webp_data.bytes, webp_data.size, 1, f);
+            fclose(f);
+            printf("Saved animation.webp\n");
+        }
+        else {
+            fprintf(stderr, "Failed to open output file\n");
+        }
+
+        // 정리
+        WebPDataClear(&webp_data);
+        WebPAnimEncoderDelete(enc);
+        WebPPictureFree(&pic);
+
+    }
+
+    // 애니메이션 webp
+    void TEST_WEBP_ANIMATED()
+    {
+        // 초기화
+        WebPAnimEncoderOptions enc_options;
+        WebPAnimEncoderOptionsInit(&enc_options);
+
+        WebPAnimEncoder* enc = WebPAnimEncoderNew(width, height, &enc_options);
+        if (!enc) {
+            fprintf(stderr, "Failed to create WebPAnimEncoder\n");
+        }
+
+        WebPPicture pic;
+        WebPPictureInit(&pic);
+        pic.width = width;
+        pic.height = height;
+        pic.use_argb = 1;
+
+        WebPConfig config;
+        WebPConfigInit(&config);
+        config.quality = 90.0f;
+
+        uint8_t* rgba = (uint8_t*)malloc(width * height * 4);
+
+        for (int frame = 0; frame < frame_count; ++frame) {
+            ClearBuffer(rgba);
+
+            // 움직이는 사각형 그리기
+            int x = frame * 20;
+            DrawRect(rgba, x, 100, 50, 50, 255, 0, 0, 255);
+
+            // RGBA → WebPPicture 로 변환
+            WebPPictureImportRGBA(&pic, rgba, width * 4);
+
+            // 프레임 추가
+            if (!WebPAnimEncoderAdd(enc, &pic, frame * frame_delay_ms, &config)) {
+                fprintf(stderr, "Failed to add frame %d\n", frame);
+            }
+        }
+
+        // 마지막 frame 마킹
+        WebPAnimEncoderAdd(enc, NULL, frame_count * frame_delay_ms, NULL);
+
+        // WebP 애니메이션 출력
+        WebPData webp_data;
+        WebPDataInit(&webp_data);
+        if (!WebPAnimEncoderAssemble(enc, &webp_data)) {
+            fprintf(stderr, "Failed to assemble WebP animation\n");
+        }
+
+
+        // 파일로 저장
+        FILE* f;
+        _wfopen_s(&f, L"test.webp", L"wb");
+        if (f) {
+            fwrite(webp_data.bytes, webp_data.size, 1, f);
+            fclose(f);
+            printf("Saved animation.webp\n");
+        }
+        else {
+            fprintf(stderr, "Failed to open output file\n");
+        }
+
+        // 정리
+        WebPDataClear(&webp_data);
+        WebPAnimEncoderDelete(enc);
+        WebPPictureFree(&pic);
+        free(rgba);
+    }
+
+    void TEST_WEBP(const std::vector<ContributionCell>& grid, int maxWeeks)
+    {
+        //TEST_WEBP_ANIMATED();
+        SaveStaticWebP(grid, maxWeeks, L"animated.webp");
+    }
+
+    Error Initialize()
     {
         CoTigraphy::MemoryLeakDetector::Initialize();
         CoTigraphy::HandleLeakDetector::Initialize();
 
-        TEST_CURL();
+        std::wstring githubToken;
 
         CoTigraphy::CommandLineParser commandLineParser;
-        Error error = SetupCommandLineParser(commandLineParser);
+        Error error = SetupCommandLineParser(commandLineParser, githubToken);
         if (error.IsFailed())
             return error;
 
@@ -126,6 +306,32 @@ namespace CoTigraphy
             return error;
         }
 
+        GitHubContributionCalendarClient contributionCalendarClient;
+        contributionCalendarClient.Initialize();
+        contributionCalendarClient.SetAccessToken(githubToken);
+        std::vector<ContributionDay> response = contributionCalendarClient.Get();
+
+        std::vector<ContributionCell> grid;
+        std::tm startDate = response.front().mDate; // 첫 날짜 (시작점)
+
+        // 모든 데이터를 grid로 변환
+        int maxWeeks = 0;
+        for (const auto& day : response)
+        {
+            ContributionCell cell;
+            cell.weekIndex = GetWeekIndex(day.mDate, startDate);
+            cell.weekday = GetWeekday(day.mDate);
+            cell.count = day.mCount;
+
+            maxWeeks = max(maxWeeks, cell.weekIndex);
+
+            grid.push_back(cell);
+        }
+
+        TEST_WEBP(grid, maxWeeks);
+
+
+        contributionCalendarClient.Uninitialize();
 
         return MAKE_ERROR(eErrorCode::Succeeded);
     }
@@ -134,7 +340,7 @@ namespace CoTigraphy
     {
     }
 
-    Error SetupCommandLineParser(CoTigraphy::CommandLineParser& commandLineParser)
+    Error SetupCommandLineParser(CoTigraphy::CommandLineParser& commandLineParser, std::wstring& githubToken)
     {
         Error error = commandLineParser.AddOption(CommandLineOption{
             L"--help", // mName
@@ -183,10 +389,7 @@ namespace CoTigraphy
             false, // mCausesExit
             [&](const std::wstring_view& value) // mHandler
             {
-                std::wstring accessToken = L"Github presonal access token: ";
-                accessToken += value;
-                accessToken += L"\n";
-                OutputDebugStringW(accessToken.c_str());
+                githubToken = value;
             }
         });
         if (error.IsFailed())

@@ -1,5 +1,5 @@
 ﻿// \file main.cpp
-// \last_updated 2025-06-05
+// \last_updated 2025-06-10
 // \author Oh Sungsik <ohsungsik@outlook.com>
 // \copyright (C) 2025. Oh Sungsik. All rights reserved.
 
@@ -11,7 +11,6 @@ int wmain()
 	const CoTigraphy::Error error = CoTigraphy::Initialize();
 	if (error.IsFailed())
 		return static_cast<int>(error.GetErrorCode());
-
 
 	CoTigraphy::Uninitialize();
 

@@ -16,3 +16,5 @@
 
 // 외부 라이브러리
 #pragma comment(lib, "curl" STATIC_LIBRARY_SUFFIX)
+#pragma comment(lib, "simdjson" STATIC_LIBRARY_SUFFIX)
+#pragma comment(lib, "webp" STATIC_LIBRARY_SUFFIX)

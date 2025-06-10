@@ -1,5 +1,5 @@
 ﻿// \file Assert.hpp
-// \last_updated 2025-06-05
+// \last_updated 2025-06-10
 // \author Oh Sungsik <ohsungsik@outlook.com>
 // \copyright (C) 2025. Oh Sungsik. All rights reserved.
 
@@ -11,10 +11,9 @@
 /// @brief 명시적 프로그램 종료 - Fail Fast 지원 (Release에서도 크래시 보장)
 /// @details Contract 위반 시 즉시 프로그램을 종료하여 시스템 안정성 확보
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-#define EXPLICIT_CRASH() do { \
-    ::OutputDebugStringW(L"[EXPLICIT_CRASH] Contract 위반으로 인한 프로그램 종료.\n");     \
-    if (::IsDebuggerPresent()) __debugbreak();                                          \
-    ::TerminateProcess(::GetCurrentProcess(), static_cast<UINT>(-1));                   \
+#define EXPLICIT_CRASH() do {                                                               \
+    if (::IsDebuggerPresent()) __debugbreak();                                              \
+    ::TerminateProcess(::GetCurrentProcess(), static_cast<UINT>(-1));                       \
 } while(false)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -51,7 +50,7 @@
                        << L"파일: " << __FILEW__ << L"\n"                                    \
                        << L"라인: " << __LINE__ << L"\n";                                    \
             ::OutputDebugStringW(debugStream.str().c_str());                                 \
-                EXPLICIT_CRASH();                                                            \
+            EXPLICIT_CRASH();                                                               \
         }                                                                                    \
     } while (false)
 

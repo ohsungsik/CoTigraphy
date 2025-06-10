@@ -1,0 +1,35 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36109.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WebP", "WebP.vcxproj", "{582487d9-52d9-4198-9954-42573d4e1b17}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|ARM64 = Debug|ARM64
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|ARM64 = Release|ARM64
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{582487d9-52d9-4198-9954-42573d4e1b17}.Debug|ARM64.ActiveCfg = Debug|ARM64
+		{582487d9-52d9-4198-9954-42573d4e1b17}.Debug|ARM64.Build.0 = Debug|ARM64
+		{582487d9-52d9-4198-9954-42573d4e1b17}.Debug|x64.ActiveCfg = Debug|x64
+		{582487d9-52d9-4198-9954-42573d4e1b17}.Debug|x64.Build.0 = Debug|x64
+		{582487d9-52d9-4198-9954-42573d4e1b17}.Debug|x86.ActiveCfg = Debug|Win32
+		{582487d9-52d9-4198-9954-42573d4e1b17}.Debug|x86.Build.0 = Debug|Win32
+		{582487d9-52d9-4198-9954-42573d4e1b17}.Release|ARM64.ActiveCfg = Release|ARM64
+		{582487d9-52d9-4198-9954-42573d4e1b17}.Release|ARM64.Build.0 = Release|ARM64
+		{582487d9-52d9-4198-9954-42573d4e1b17}.Release|x64.ActiveCfg = Release|x64
+		{582487d9-52d9-4198-9954-42573d4e1b17}.Release|x64.Build.0 = Release|x64
+		{582487d9-52d9-4198-9954-42573d4e1b17}.Release|x86.ActiveCfg = Release|Win32
+		{582487d9-52d9-4198-9954-42573d4e1b17}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+	EndGlobalSection
+EndGlobal

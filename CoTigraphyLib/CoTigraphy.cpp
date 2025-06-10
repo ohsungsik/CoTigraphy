@@ -21,15 +21,15 @@
 
 namespace CoTigraphy
 {
-    constexpr int width = 256;
-    constexpr int height = 256;
-    constexpr int frame_count = 10;
-    constexpr int frame_delay_ms = 100; // 100ms per frame
+    constexpr int gWidth = 256;
+    constexpr int gHeight = 256;
+    constexpr int gFrame_count = 10;
+    constexpr int gFrame_delay_ms = 100;
 
-    constexpr int cellSize = 10; // 각 칸 크기 (px)
-    constexpr int cellMargin = 3; // 칸 간격 (px)
-    constexpr int daysPerWeek = 7; // Sunday~Saturday (7 rows)
-    constexpr int imageHeight = daysPerWeek * (cellSize + cellMargin);
+    constexpr int gCellSize = 10; // 각 칸 크기 (px)
+    constexpr int gCellMargin = 3; // 칸 간격 (px)
+    constexpr int gDaysPerWeek = 7; // Sunday~Saturday (7 rows)
+    constexpr int gImageHeight = (gDaysPerWeek + 1) * (gCellSize + gCellMargin);
 
     struct ContributionCell
     {
@@ -59,7 +59,7 @@ namespace CoTigraphy
     // RGBA 버퍼를 초기화 (검은색 배경)
     void ClearBuffer(uint8_t* rgba)
     {
-        memset(rgba, 0, width * height * 4);
+        memset(rgba, 0, gWidth * gHeight * 4);
     }
 
     // 사각형 그리기 (RGBA 버퍼에 직접 그리기)
@@ -67,11 +67,11 @@ namespace CoTigraphy
     {
         for (int j = y; j < y + h; ++j)
         {
-            if (j < 0 || j >= height) continue;
+            if (j < 0 || j >= gHeight) continue;
             for (int i = x; i < x + w; ++i)
             {
-                if (i < 0 || i >= width) continue;
-                int index = (j * width + i) * 4;
+                if (i < 0 || i >= gWidth) continue;
+                int index = (j * gWidth + i) * 4;
                 rgba[index + 0] = r;
                 rgba[index + 1] = g;
                 rgba[index + 2] = b;
@@ -126,14 +126,14 @@ namespace CoTigraphy
 
     void DrawCell(uint8_t* rgba, int imgWidth, int x, int y, uint8_t r, uint8_t g, uint8_t b)
     {
-        for (int j = 0; j < cellSize; ++j)
+        for (int j = 0; j < gCellSize; ++j)
         {
-            for (int i = 0; i < cellSize; ++i)
+            for (int i = 0; i < gCellSize; ++i)
             {
                 int px = x + i;
                 int py = y + j;
 
-                if (px < 0 || px >= imgWidth || py < 0 || py >= imageHeight) continue;
+                if (px < 0 || px >= imgWidth || py < 0 || py >= gImageHeight) continue;
 
                 int index = (py * imgWidth + px) * 4;
                 rgba[index + 0] = r;
@@ -144,16 +144,69 @@ namespace CoTigraphy
         }
     }
 
+    void DrawCell_v2(uint8_t* rgba, int imgWidth, int imgHeight, int centerX, int centerY, int cellSize, uint8_t r,
+                     uint8_t g, uint8_t b)
+    {
+        int halfSize = cellSize / 2;
+
+        for (int j = -halfSize; j < cellSize - halfSize; ++j)
+        {
+            for (int i = -halfSize; i < cellSize - halfSize; ++i)
+            {
+                int px = centerX + i;
+                int py = centerY + j;
+
+                if (px < 0 || px >= imgWidth || py < 0 || py >= imgHeight) continue;
+
+                int index = (py * imgWidth + px) * 4;
+                rgba[index + 0] = r;
+                rgba[index + 1] = g;
+                rgba[index + 2] = b;
+                rgba[index + 3] = 255;
+            }
+        }
+    }
+
+    void DrawWorm(
+        uint8_t* rgba,
+        int imageWidth,
+        int imageHeight,
+        int startX,
+        int startY,
+        int numSegments,
+        int maxCellSize,
+        uint8_t r, uint8_t g, uint8_t b)
+    {
+        for (int segment = 0; segment < numSegments; ++segment)
+        {
+            // 0.0 (head) → 1.0 (tail)
+            float t = static_cast<float>(segment) / (numSegments - 1);
+
+            // Cell size 점점 감소 (선형 or 곡선)
+            int cellSize = static_cast<int>(maxCellSize * (1.0f - 0.7f * t));
+            if (cellSize < 2) cellSize = 2;
+
+            // 중심 좌표 계산 (→ 오른쪽 이동)
+            int offset = segment * (maxCellSize + 1); // +1: 간격
+            int centerX = startX + offset;
+            int centerY = startY;
+
+            // 그림
+            DrawCell_v2(rgba, imageWidth, imageHeight, centerX, centerY, cellSize, r, g, b);
+        }
+    }
+
+
     void SaveStaticWebP(const std::vector<ContributionCell>& grid, int maxWeeks, const wchar_t* filename)
     {
         const int weeks = maxWeeks;
 
-        const int imageWidth = weeks * (cellSize + cellMargin);
+        const int imageWidth = weeks * (gCellSize + gCellMargin);
 
         WebPAnimEncoderOptions enc_options;
         WebPAnimEncoderOptionsInit(&enc_options);
 
-        WebPAnimEncoder* enc = WebPAnimEncoderNew(imageWidth, imageHeight, &enc_options);
+        WebPAnimEncoder* enc = WebPAnimEncoderNew(imageWidth, gImageHeight, &enc_options);
         ASSERT(enc);
 
         // WebPConfig 설정
@@ -164,12 +217,12 @@ namespace CoTigraphy
         WebPPicture pic;
         WebPPictureInit(&pic);
         pic.width = imageWidth;
-        pic.height = imageHeight;
+        pic.height = gImageHeight;
         pic.use_argb = 1;
 
 
-        std::vector<uint8_t> rgba(imageWidth * imageHeight * 4, 0); // 초기화 (배경 검정)
-        for (size_t i = 0; i < imageWidth * imageHeight; ++i)
+        std::vector<uint8_t> rgba(imageWidth * gImageHeight * 4, 0); // 초기화
+        for (size_t i = 0; i < imageWidth * gImageHeight; ++i) // 배경 초기화
         {
             rgba[i * 4 + 0] = 0x01; // R
             rgba[i * 4 + 1] = 0x04; // G
@@ -177,22 +230,57 @@ namespace CoTigraphy
             rgba[i * 4 + 3] = 0x0d; // A
         }
 
-        // 그리기
+        // 셀 그리기
+        if (0)
+        {
+            for (const auto& cell : grid)
+            {
+                int x = cell.weekIndex * (gCellSize + gCellMargin);
+                int y = (cell.weekday + 1) * (gCellSize + gCellMargin);
+
+                uint8_t r = GetRValue(cell.color);
+                uint8_t g = GetGValue(cell.color);
+                uint8_t b = GetBValue(cell.color);
+
+                DrawCell(rgba.data(), imageWidth, x, y, r, g, b);
+            }
+        }
+
         for (const auto& cell : grid)
         {
-            int x = cell.weekIndex * (cellSize + cellMargin);
-            int y = cell.weekday * (cellSize + cellMargin);
+            int x = cell.weekIndex * (gCellSize + gCellMargin);
+            int y = (cell.weekday + 1) * (gCellSize + gCellMargin);
+
+            // 중앙 좌표 계산
+            int centerX = x + gCellSize / 2;
+            int centerY = y + gCellSize / 2;
 
             uint8_t r = GetRValue(cell.color);
             uint8_t g = GetGValue(cell.color);
             uint8_t b = GetBValue(cell.color);
 
-            DrawCell(rgba.data(), imageWidth, x, y, r, g, b);
+            // 고정된 크기로 먼저 그리기 (기존과 동일하게)
+            DrawCell_v2(rgba.data(), imageWidth, gImageHeight, centerX, centerY, gCellSize, r, g, b);
         }
 
+        //const COLORREF wormColor = HexToColorRef(L"#FFA500");
+        const COLORREF wormColor = HexToColorRef(L"#FF69B4");
+        const uint8_t wormColorR = GetRValue(wormColor);
+        const uint8_t wormColorG = GetGValue(wormColor);
+        const uint8_t wormColorB = GetBValue(wormColor);
+
+        // 지렁이 그리기
+        DrawWorm(rgba.data(),
+                 imageWidth,
+                 gImageHeight,
+                 10, // startX
+                 gImageHeight / 2, // centerY
+                 12, // segment 수
+                 10, // 최대 gCellSize
+                 wormColorR, wormColorG, wormColorB); // 보라색
+
         // RGBA → WebPPicture 로 변환
-        int r = WebPPictureImportRGBA(&pic, rgba.data(), imageWidth * 4);
-        (r);
+        WebPPictureImportRGBA(&pic, rgba.data(), imageWidth * 4);
 
         // 프레임 추가
         if (!WebPAnimEncoderAdd(enc, &pic, 0, &config))
@@ -239,7 +327,7 @@ namespace CoTigraphy
         WebPAnimEncoderOptions enc_options;
         WebPAnimEncoderOptionsInit(&enc_options);
 
-        WebPAnimEncoder* enc = WebPAnimEncoderNew(width, height, &enc_options);
+        WebPAnimEncoder* enc = WebPAnimEncoderNew(gWidth, gHeight, &enc_options);
         if (!enc)
         {
             fprintf(stderr, "Failed to create WebPAnimEncoder\n");
@@ -247,17 +335,17 @@ namespace CoTigraphy
 
         WebPPicture pic;
         WebPPictureInit(&pic);
-        pic.width = width;
-        pic.height = height;
+        pic.width = gWidth;
+        pic.height = gHeight;
         pic.use_argb = 1;
 
         WebPConfig config;
         WebPConfigInit(&config);
         config.quality = 90.0f;
 
-        uint8_t* rgba = (uint8_t*)malloc(width * height * 4);
+        uint8_t* rgba = (uint8_t*)malloc(gWidth * gHeight * 4);
 
-        for (int frame = 0; frame < frame_count; ++frame)
+        for (int frame = 0; frame < gFrame_count; ++frame)
         {
             ClearBuffer(rgba);
 
@@ -266,17 +354,17 @@ namespace CoTigraphy
             DrawRect(rgba, x, 100, 50, 50, 255, 0, 0, 255);
 
             // RGBA → WebPPicture 로 변환
-            WebPPictureImportRGBA(&pic, rgba, width * 4);
+            WebPPictureImportRGBA(&pic, rgba, gWidth * 4);
 
             // 프레임 추가
-            if (!WebPAnimEncoderAdd(enc, &pic, frame * frame_delay_ms, &config))
+            if (!WebPAnimEncoderAdd(enc, &pic, frame * gFrame_delay_ms, &config))
             {
                 fprintf(stderr, "Failed to add frame %d\n", frame);
             }
         }
 
         // 마지막 frame 마킹
-        WebPAnimEncoderAdd(enc, NULL, frame_count * frame_delay_ms, NULL);
+        WebPAnimEncoderAdd(enc, NULL, gFrame_count * gFrame_delay_ms, NULL);
 
         // WebP 애니메이션 출력
         WebPData webp_data;

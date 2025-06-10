@@ -14,6 +14,7 @@
     <ClCompile Include="Error.cpp" />
     <ClCompile Include="CoTigraphy.cpp" />
     <ClCompile Include="GitHubContributionCalendarClient.cpp" />
+    <ClCompile Include="GridCanvas.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MemoryLeakDetector.hpp" />
@@ -27,5 +28,6 @@
     <ClInclude Include="Error.hpp" />
     <ClInclude Include="CoTigraphy.hpp" />
     <ClInclude Include="GitHubContributionCalendarClient.hpp" />
+    <ClInclude Include="GridCanvas.hpp" />
   </ItemGroup>
 </Project>

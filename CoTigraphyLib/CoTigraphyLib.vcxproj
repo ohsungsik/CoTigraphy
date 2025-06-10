@@ -237,6 +237,7 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="GridCanvas.cpp" />
     <ClCompile Include="CommandLineParser.cpp" />
     <ClCompile Include="CoTigraphy.cpp" />
     <ClCompile Include="Error.cpp" />
@@ -249,6 +250,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BuildInfo.hpp" />
+    <ClInclude Include="GridCanvas.hpp" />
     <ClInclude Include="CommandLineParser.hpp" />
     <ClInclude Include="CoTigraphy.hpp" />
     <ClInclude Include="Error.hpp" />

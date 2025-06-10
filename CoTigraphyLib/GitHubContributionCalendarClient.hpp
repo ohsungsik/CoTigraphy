@@ -114,4 +114,4 @@ namespace CoTigraphy
         CURL* mCurl = nullptr;
         curl_slist* mHeaders = nullptr;
     };
-}
+}   // CoTigraphy

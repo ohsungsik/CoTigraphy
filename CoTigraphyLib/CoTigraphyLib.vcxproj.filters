@@ -15,6 +15,7 @@
     <ClCompile Include="CoTigraphy.cpp" />
     <ClCompile Include="GitHubContributionCalendarClient.cpp" />
     <ClCompile Include="GridCanvas.cpp" />
+    <ClCompile Include="WebPWriter.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MemoryLeakDetector.hpp" />
@@ -29,5 +30,6 @@
     <ClInclude Include="CoTigraphy.hpp" />
     <ClInclude Include="GitHubContributionCalendarClient.hpp" />
     <ClInclude Include="GridCanvas.hpp" />
+    <ClInclude Include="WebPWriter.hpp" />
   </ItemGroup>
 </Project>

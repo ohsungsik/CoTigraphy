@@ -88,10 +88,14 @@ namespace CoTigraphy
 	_Success_(static_cast<eErrorCode>(return) == eErrorCode::Succeeded)
 		Error CommandLineParser::Parse(_In_ const std::vector<std::wstring>& args)
 	{
-		// 명령줄 인자를 입력하지 않으면 기본으로 help 명령을 출력
+		// 명령줄 인자를 입력하지 않으면 기본으로 help 명령을 출력 후 프로그램 종료
 		if (args.empty())
 		{
 		    PrintHelpTo(std::wcout);
+
+			// 여기 수정하면 CoTigraphyLib\CoTigraphy.cpp:493 도 적절히 수정되어야 함
+			::TerminateProcess(::GetCurrentProcess(), 0);
+			    
 			return MAKE_ERROR(eErrorCode::Succeeded);
 		}
 

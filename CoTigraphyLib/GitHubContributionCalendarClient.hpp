@@ -1,5 +1,5 @@
 ﻿// \file GitHubContributionCalendarClient.hpp
-// \last_updated 2025-06-10
+// \last_updated 2025-06-11
 // \author Oh Sungsik <ohsungsik@outlook.com>
 // \copyright (C) 2025. Oh Sungsik. All rights reserved.
 
@@ -13,11 +13,19 @@
 
 namespace CoTigraphy
 {
-    struct ContributionDay
+    struct ContributionCell
     {
-        std::tm mDate;
-        uint64_t mCount;
-        std::wstring mColor;
+        size_t mXIndex = 0;
+        size_t mYIndex = 0;
+        uint64_t mCount = 0;
+        COLORREF mColor = 0;
+    };
+
+    struct ContributionInfo
+    {
+        std::vector<ContributionCell> mContributionCells;
+        size_t mRowCount = 0; // 줄 수 -> 요일 갯수 -> 7
+        size_t mColoumCount = 0; // 커럼 수 -> 주 갯수
     };
 
     class GitHubContributionCalendarClient final
@@ -37,7 +45,7 @@ namespace CoTigraphy
 
         void SetAccessToken(const std::wstring& token);
 
-        std::vector<ContributionDay> Get() const;
+        ContributionInfo FetchContributionInfo() const;
 
     private:
         // UTF-8 → wstring 변환
@@ -93,25 +101,27 @@ namespace CoTigraphy
             return totalSize;
         }
 
-        std::tm ParseDateString(const std::string& dateStr) const
+        static COLORREF HexToColorRef(const std::wstring& hex)
         {
-            std::tm tm{};
-            std::istringstream ss(dateStr);
-            ss >> std::get_time(&tm, "%Y-%m-%d");
+            PRECONDITION(hex.length() == 7);
+            PRECONDITION(hex[0] == L'#');
 
-            if (ss.fail())
-            {
-                return {};
-            }
+            const unsigned int r = std::stoi(hex.substr(1, 2), nullptr, 16);
+            const unsigned int g = std::stoi(hex.substr(3, 2), nullptr, 16);
+            const unsigned int b = std::stoi(hex.substr(5, 2), nullptr, 16);
 
-            return tm;
+            POSTCONDITION(r <= 255);
+            POSTCONDITION(g <= 255);
+            POSTCONDITION(g <= 255);
+
+            return RGB(r, g, b); // Macro: ((BYTE)(r) | ((BYTE)(g) << 8) | ((BYTE)(b) << 16))
         }
 
     private:
-        std::vector<ContributionDay> Parse(const std::string& response) const;
+        ContributionInfo Parse(const std::string& response) const;
 
     private:
         CURL* mCurl = nullptr;
         curl_slist* mHeaders = nullptr;
     };
-}   // CoTigraphy
+} // CoTigraphy

@@ -1,5 +1,5 @@
 ﻿// \file GitHubContributionCalendarClient.cpp
-// \last_updated 2025-06-11
+// \last_updated 2025-06-13
 // \author Oh Sungsik <ohsungsik@outlook.com>
 // \copyright (C) 2025. Oh Sungsik. All rights reserved.
 
@@ -59,7 +59,7 @@ namespace CoTigraphy
         mHeaders = curl_slist_append(mHeaders, authHeader.c_str());
     }
 
-    ContributionInfo GitHubContributionCalendarClient::FetchContributionInfo() const
+    GridData GitHubContributionCalendarClient::FetchContributionInfo() const
     {
         PRECONDITION(mHeaders != nullptr); // SetAccessToken()을 먼저 호출해야 함
 
@@ -97,9 +97,9 @@ namespace CoTigraphy
         return Parse(responseStr);
     }
 
-    ContributionInfo GitHubContributionCalendarClient::Parse(const std::string& response) const
+    GridData GitHubContributionCalendarClient::Parse(const std::string& response) const
     {
-        ContributionInfo contributionInfo;
+        GridData contributionInfo;
 
         simdjson::ondemand::parser parser;
         const simdjson::padded_string padded = simdjson::padded_string(response);
@@ -117,6 +117,7 @@ namespace CoTigraphy
             auto daysArray = week["contributionDays"].get_array();
 
             const size_t rowCount = daysArray.count_elements().value();
+
             if (contributionInfo.mRowCount != 0)
             {
                 // 오늘이 수요일인 경우
@@ -127,21 +128,25 @@ namespace CoTigraphy
 
             contributionInfo.mRowCount = rowCount;
 
+            std::vector<GridCell> gridCells;
+
             for (auto day : daysArray)
             {
                 const uint64_t count = day["contributionCount"].get_uint64().value();
                 const std::string color = std::string(day["color"].get_string().value());
 
-                ContributionCell contributionCell;
-                contributionCell.mCount = count;
-                contributionCell.mColor = HexToColorRef(Utf8ToWideString(color));
-                contributionCell.mYIndex = yIndex;
-                contributionCell.mXIndex = xIndex;
+                GridCell cell;
+                cell.mCount = count;
+                cell.mColor = HexToColorRef(Utf8ToWideString(color));
+                cell.mYIndex = yIndex;
+                cell.mXIndex = xIndex;
 
-                contributionInfo.mContributionCells.push_back(contributionCell);
+                gridCells.push_back(cell);
 
                 yIndex++;
             }
+
+            contributionInfo.mCells.push_back(gridCells);
 
             xIndex++;
             yIndex = 0;

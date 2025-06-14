@@ -1,5 +1,5 @@
 ﻿// \file GitHubContributionCalendarClient.hpp
-// \last_updated 2025-06-11
+// \last_updated 2025-06-13
 // \author Oh Sungsik <ohsungsik@outlook.com>
 // \copyright (C) 2025. Oh Sungsik. All rights reserved.
 
@@ -11,23 +11,10 @@
 
 #include <curl/curl.h>
 
+#include "Grid.hpp"
+
 namespace CoTigraphy
 {
-    struct ContributionCell
-    {
-        size_t mXIndex = 0;
-        size_t mYIndex = 0;
-        uint64_t mCount = 0;
-        COLORREF mColor = 0;
-    };
-
-    struct ContributionInfo
-    {
-        std::vector<ContributionCell> mContributionCells;
-        size_t mRowCount = 0; // 줄 수 -> 요일 갯수 -> 7
-        size_t mColoumCount = 0; // 커럼 수 -> 주 갯수
-    };
-
     class GitHubContributionCalendarClient final
     {
     public:
@@ -45,7 +32,7 @@ namespace CoTigraphy
 
         void SetAccessToken(const std::wstring& token);
 
-        ContributionInfo FetchContributionInfo() const;
+        GridData FetchContributionInfo() const;
 
     private:
         // UTF-8 → wstring 변환
@@ -118,7 +105,7 @@ namespace CoTigraphy
         }
 
     private:
-        ContributionInfo Parse(const std::string& response) const;
+        GridData Parse(const std::string& response) const;
 
     private:
         CURL* mCurl = nullptr;

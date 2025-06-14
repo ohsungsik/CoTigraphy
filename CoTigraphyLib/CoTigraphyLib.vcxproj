@@ -237,6 +237,7 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Grid.cpp" />
     <ClCompile Include="GridCanvas.cpp" />
     <ClCompile Include="CommandLineParser.cpp" />
     <ClCompile Include="CoTigraphy.cpp" />
@@ -248,9 +249,11 @@
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="WebPWriter.cpp" />
+    <ClCompile Include="Worm.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BuildInfo.hpp" />
+    <ClInclude Include="Grid.hpp" />
     <ClInclude Include="GridCanvas.hpp" />
     <ClInclude Include="CommandLineParser.hpp" />
     <ClInclude Include="CoTigraphy.hpp" />
@@ -263,6 +266,7 @@
     <ClInclude Include="resource.h" />
     <ClInclude Include="VersionInfo.hpp" />
     <ClInclude Include="WebPWriter.hpp" />
+    <ClInclude Include="Worm.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -1,5 +1,5 @@
 ﻿// \file ErrorCode.hpp
-// \last_updated 2025-06-08
+// \last_updated 2025-06-14
 // \author Oh Sungsik <ohsungsik@outlook.com>
 // \copyright (C) 2025. Oh Sungsik. All rights reserved.
 
@@ -157,6 +157,10 @@ namespace CoTigraphy
         InvalidArguments = MAKE_ERRORCODE(eFacility::CoTigraphy),   // 유효하지 않은 파라미터
         CommandLineArgumentsAlreadyExists,                          // 이미 추가된 커맨드 라인 파라미터
         CommandLineArgumentNotFound,                                // 미정의 명령줄 인자가 들어왔을 때
+
+        MissingFileName,                                            // 파일 명이 주어지지 않음
+        InvalidFileExtension,                                       // 유효하지 않은 파일 확장자 (.webp만 지원)
+        FileIOFailure,                                              // File IO 실패
 
     };
 

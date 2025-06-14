@@ -10,12 +10,13 @@ int wmain()
 {
     std::wstring githubToken;
     std::wstring userName;
+    std::wstring outputPath;
 
-    CoTigraphy::Error error = CoTigraphy::Initialize(githubToken, userName);
+    CoTigraphy::Error error = CoTigraphy::Initialize(githubToken, userName, outputPath);
     if (error.IsFailed())
         return static_cast<int>(error.GetErrorCode());
 
-    error = CoTigraphy::Run(githubToken, userName);
+    error = CoTigraphy::Run(githubToken, userName, outputPath);
     if (error.IsFailed())
         return static_cast<int>(error.GetErrorCode());
 

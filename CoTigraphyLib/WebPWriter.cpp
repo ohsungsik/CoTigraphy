@@ -6,6 +6,8 @@
 #include "pch.hpp"
 #include "WebPWriter.hpp"
 
+#include <filesystem>
+#include <set>
 #include <webp/encode.h>
 #include <webp/mux.h>
 
@@ -57,9 +59,22 @@ namespace CoTigraphy
         return true;
     }
 
-    void WebPWriter::SaveToFile(_In_ const std::wstring& fileName) const
+    Error WebPWriter::SaveToFile(_In_ const std::wstring& fileName) const
     {
         PRECONDITION(fileName.empty() == false);
+
+        const std::filesystem::path path(fileName);
+        // 확장자가 유효한지 확인, 대소문자 무시
+        if (_wcsicmp(path.extension().c_str(), L".webp") != 0)
+        {
+            return MAKE_ERROR(eErrorCode::InvalidFileExtension);
+        }
+
+        // 파일 이름 (확장자 제외)이 비었는지 확인
+        if (path.stem().empty())
+        {
+            return MAKE_ERROR(eErrorCode::MissingFileName);
+        }
 
         // 마지막 frame 마킹
         int ret = WebPAnimEncoderAdd(mEncoder, nullptr, static_cast<int>(mEncodedFrame * mFrameDelayMs), nullptr);
@@ -83,25 +98,49 @@ namespace CoTigraphy
         );
 
         // 파일 생성 성공 여부 확인
-        ASSERT(hFile != INVALID_HANDLE_VALUE);
+        if (hFile == INVALID_HANDLE_VALUE)
+        {
+            return MAKE_ERROR_FROM_LAST_WIN32_ERROR();
+        }
 
         // 데이터가 유효한지 확인
         ASSERT(webpData.bytes != nullptr);
         ASSERT(webpData.size > 0);
 
         // 파일에 데이터 쓰기
-        DWORD bytesWritten = 0;
-        const BOOL writeResult = WriteFile(
-            hFile, // 파일 핸들
-            webpData.bytes, // 쓸 데이터
-            static_cast<DWORD>(webpData.size), // 데이터 크기
-            &bytesWritten, // 실제 쓰여진 바이트 수
-            nullptr // 오버랩 구조체 없음
-        );
+        size_t totalWritten = 0;
+        const BYTE* buffer = webpData.bytes;
+        const size_t totalSize = webpData.size;
 
-        // 쓰기 성공 및 모든 데이터가 쓰여졌는지 확인
-        ASSERT(writeResult != FALSE);
-        ASSERT(bytesWritten == webpData.size);
+        // 네트워크 드라이브 디스크에서 간혹 한번에 안써지는 경우가 발생..
+        // 따라서 모든 데이터를 다 쓸떄 까지 반복하여 쓰기 시도
+        while (totalWritten < totalSize)
+        {
+            DWORD bytesWritten = 0;
+
+            // 한 번에 WriteFile이 처리 가능한 최대 크기 계산
+            const DWORD chunkSize = static_cast<DWORD>(
+                std::min<size_t>(totalSize - totalWritten, static_cast<size_t>(MAXDWORD))
+            );
+
+            const BOOL writeResult = WriteFile(
+                hFile,
+                buffer + totalWritten,
+                chunkSize,
+                &bytesWritten,
+                nullptr
+            );
+
+            if (!writeResult)
+            {
+                // 실패 처리
+                CloseHandle(hFile);
+                WebPDataClear(&webpData);
+                return MAKE_ERROR(eErrorCode::FileIOFailure);
+            }
+
+            totalWritten += bytesWritten;
+        }
 
         // 파일 핸들 정리
         const BOOL closeResult = CloseHandle(hFile);
@@ -109,5 +148,7 @@ namespace CoTigraphy
 
         // WebP 데이터 정리
         WebPDataClear(&webpData);
+
+        return MAKE_ERROR(eErrorCode::Succeeded);
     }
 }

@@ -21,7 +21,9 @@
 
 namespace CoTigraphy
 {
-    Error Initialize(_Out_opt_ std::wstring& githubToken, _Out_opt_ std::wstring& userName)
+    Error Initialize(_Out_opt_ std::wstring& githubToken,
+                     _Out_opt_ std::wstring& userName,
+                     _Out_opt_ std::wstring& outputPath)
     {
         CoTigraphy::MemoryLeakDetector::Initialize();
         CoTigraphy::HandleLeakDetector::Initialize();
@@ -30,7 +32,7 @@ namespace CoTigraphy
         userName.clear();
 
         CoTigraphy::CommandLineParser commandLineParser;
-        Error error = SetupCommandLineParser(commandLineParser, githubToken, userName);
+        Error error = SetupCommandLineParser(commandLineParser, githubToken, userName, outputPath);
         if (error.IsFailed())
             return error;
 
@@ -40,7 +42,9 @@ namespace CoTigraphy
         LocalFree(argv);
         if (error.IsFailed())
         {
-            ASSERT(error.IsSucceeded()); // Commandl line arguments 파싱 실패
+            // 파싱 실패 시 help 출력
+            commandLineParser.PrintHelpTo(std::wcout);
+            ASSERT(error.IsSucceeded());
             return error;
         }
 
@@ -49,10 +53,12 @@ namespace CoTigraphy
 
     Error SetupCommandLineParser(_In_ CoTigraphy::CommandLineParser& commandLineParser,
                                  _Out_opt_ std::wstring& githubToken,
-                                 _Out_opt_ std::wstring& userName)
+                                 _Out_opt_ std::wstring& userName,
+                                 _Out_opt_ std::wstring& outputPath)
     {
         githubToken.clear();
         userName.clear();
+        outputPath.clear();
 
         Error error = commandLineParser.AddOption(CommandLineOption{
             L"--help", // mName
@@ -112,7 +118,7 @@ namespace CoTigraphy
         }
 
         error = commandLineParser.AddOption(CommandLineOption{
-            L"--userName", // mName
+            L"--user_name", // mName
             L"-n", // mShortName
             L"Github user name", // mDescription
             true, // mRequiresValue
@@ -128,10 +134,28 @@ namespace CoTigraphy
             return error;
         }
 
+        error = commandLineParser.AddOption(CommandLineOption{
+            L"--output", // mName
+            L"-o", // mShortName
+            L"Output Path", // mDescription
+            true, // mRequiresValue
+            false, // mCausesExit
+            [&](const std::wstring_view& value) // mHandler
+            {
+                outputPath = value;
+            }
+        });
+        if (error.IsFailed())
+        {
+            ASSERT(error.IsSucceeded());
+            return error;
+        }
+
         return MAKE_ERROR(eErrorCode::Succeeded);
     }
 
-    Error Run(_In_ const std::wstring& githubToken, _In_ const std::wstring& userName)
+    Error Run(_In_ const std::wstring& githubToken, _In_ const std::wstring& userName,
+              _In_ const std::wstring& outputPath)
     {
         GitHubContributionCalendarClient contributionCalendarClient;
         contributionCalendarClient.Initialize();
@@ -185,8 +209,9 @@ namespace CoTigraphy
             ASSERT(ret == true);
         }
 
-        const std::wstring fileName = L"animated.webp";
-        webPWriter.SaveToFile(fileName);
+        const Error error = webPWriter.SaveToFile(outputPath);
+        if (error.IsFailed())
+            return error;
 
         return MAKE_ERROR(eErrorCode::Succeeded);
     }

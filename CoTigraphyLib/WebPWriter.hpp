@@ -55,7 +55,7 @@ namespace CoTigraphy
          * @pre 최소 1개의 프레임이 AddFrame()을 통해 등록되어 있어야 함
          * @post 지정된 경로에 WebP 애니메이션 파일이 생성됨
          */
-        void SaveToFile(_In_ const std::wstring& fileName) const;
+        Error SaveToFile(_In_ const std::wstring& fileName) const;
 
     private:
         const size_t mFrameDelayMs = 80; // 프레임 간 딜레이 (단위: ms)

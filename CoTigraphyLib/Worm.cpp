@@ -96,9 +96,10 @@ namespace CoTigraphy
 			const int cx = node.pt.x;
 			const int cy = node.pt.y;
 
-			if (mGrid.IsInside(static_cast<size_t>(cy), static_cast<size_t>(cx)) &&
-				mGrid.GetLevel(static_cast<size_t>(cy), static_cast<size_t>(cx)) == currentLevel &&
-				!(cx == start.x && cy == start.y)) // 자신은 제외
+			if (mGrid.IsInside(static_cast<size_t>(cy), static_cast<size_t>(cx))
+				&& mGrid.GetLevel(static_cast<size_t>(cy), static_cast<size_t>(cx)) <= currentLevel
+				&& mGrid.GetLevel(static_cast<size_t>(cy), static_cast<size_t>(cx)) != 0
+				&& !(cx == start.x && cy == start.y)) // 자신은 제외
 			{
 				// 역추적하여 경로 복원
 				POINT cur = node.pt;

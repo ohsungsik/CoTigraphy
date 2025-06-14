@@ -1,5 +1,5 @@
 ﻿// \file VersionInfo.hpp
-// \last_updated 2025-06-14
+// \last_updated 2025-06-15
 // \author Oh Sungsik <ohsungsik@outlook.com>
 // \copyright (C) 2025. Oh Sungsik. All rights reserved.
 
@@ -10,9 +10,9 @@
 // 프로그램 버전 정보
 // 버전 정보는 Semantic Versioning 2.0.0 규칙을 따른다.
 // https://semver.org/
-#define VERSION_INFO_MAJOR １
+#define VERSION_INFO_MAJOR 1
 #define VERSION_INFO_MINOR 0
-#define VERSION_INFO_PATCH ０
+#define VERSION_INFO_PATCH 0
 #define VERSION_INFO_BUILD BUILD_NUMBER
 
 #define MULTIBYTE_STRINGIFY(x) #x

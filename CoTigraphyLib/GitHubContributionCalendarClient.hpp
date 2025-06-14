@@ -17,7 +17,6 @@ namespace CoTigraphy
      * \brief Github의 Contribution calendar 정보를 가져오는 클라이언트 클래스
      * \details
      *  - GraphQL을 통해 contribution calendar 데이터를 가져옴
-     *  - simdjson을 통해 가져온 데이터를 파싱
      *  - 사용 전 Initialize(), 사용 후 Uninitialize() 호출 필수
      */
     class GitHubContributionCalendarClient final

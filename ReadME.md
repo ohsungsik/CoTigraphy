@@ -65,7 +65,7 @@ CoTigraphy.x64.Release.exe [options]
 
 ```bash
 # 기본 사용법
-CoTigraphy.x64.Release.exe -t ghp_abc123 -n ohsungsik -o C:\output
+CoTigraphy.x64.Release.exe -t ghp_abc123 -n ohsungsik -o CoTigraphy.webp
 
 # 도움말 확인
 CoTigraphy.x64.Release.exe --help
@@ -78,7 +78,7 @@ CoTigraphy.x64.Release.exe --version
 
 ## 🔐 GitHub Access Token 생성 방법
 
-**Personal Access Token (PAT)**이 필요합니다.
+Personal Access Token (PAT)이 필요합니다.
 
 > 💡 **참고**: 토큰은 `--token` 또는 `-t` 옵션으로 전달할 수 있습니다.
 
@@ -107,7 +107,7 @@ CoTigraphy.x64.Release.exe --version
 ### 토큰 사용 예시
 
 ```bash
-CoTigraphy.x64.Release.exe -t ghp_xxxxxxxxxxxxxxxxxxx -n your_github_id -o C:\output
+CoTigraphy.x64.Release.exe -t ghp_xxxxxxxxxxxxxxxxxxx -n your_github_id -o CoTigraphy.webp
 ```
 
 ### 보안 주의사항

@@ -1,5 +1,5 @@
 ﻿// \file GridCanvas.cpp
-// \last_updated 2025-06-13
+// \last_updated 2025-06-14
 // \author Oh Sungsik <ohsungsik@outlook.com>
 // \copyright (C) 2025. Oh Sungsik. All rights reserved.
 
@@ -29,55 +29,14 @@ namespace CoTigraphy
 
         mGridCanvasContext = gridCanvasContext;
 
-        mBufferSize = static_cast<size_t>(mGridCanvasContext.mWidth) * mGridCanvasContext.mHeight * mBytesPerPixel;
+        mBufferSize = mGridCanvasContext.mWidth * mGridCanvasContext.mHeight * mBytesPerPixel;
 
-        mBuffer = static_cast<uint8_t*>(_aligned_malloc(mBufferSize, m_alignment));
+        mBuffer = static_cast<uint8_t*>(_aligned_malloc(mBufferSize, mAlignmentBits));
 
         POSTCONDITION(mBuffer);
     }
 
-    void GridCanvas::DrawRect(const unsigned y, const unsigned x, const COLORREF color) const
-    {
-        DrawRectScale(y, x, 1.0f, color);
-    }
-
-    void GridCanvas::DrawRectScale(const unsigned int y, const unsigned int x, const float& scale,
-                                   const COLORREF color) const
-    {
-        PRECONDITION(mGridCanvasContext.mCellSize != 0);
-        PRECONDITION(y < mGridCanvasContext.mHeight);
-        PRECONDITION(x < mGridCanvasContext.mWidth);
-
-        const RECT rect = GetRect(y, x, scale);
-
-        // Extract RGB from COLORREF (COLORREF is 0x00bbggrr)
-        const uint8_t r = GetRValue(color);
-        const uint8_t g = GetGValue(color);
-        const uint8_t b = GetBValue(color);
-        const uint8_t a = 255;
-
-        // Clamp rect boundaries to image size (safe drawing)
-        const LONG left = std::max<LONG>(0, rect.left);
-        const LONG right = std::min<LONG>(mGridCanvasContext.mWidth, rect.right);
-        const LONG top = std::max<LONG>(0, rect.top);
-        const LONG bottom = std::min<LONG>(mGridCanvasContext.mHeight, rect.bottom);
-
-        // Draw rectangle area
-        for (LONG yPos = top; yPos < bottom; ++yPos)
-        {
-            for (LONG xPos = left; xPos < right; ++xPos)
-            {
-                const size_t index = (static_cast<size_t>(yPos) * mGridCanvasContext.mWidth + static_cast<size_t>(xPos))
-                    * mBytesPerPixel;
-                mBuffer[index + 0] = r;
-                mBuffer[index + 1] = g;
-                mBuffer[index + 2] = b;
-                mBuffer[index + 3] = a;
-            }
-        }
-    }
-
-    void GridCanvas::ClearTo(const COLORREF color) const
+    void GridCanvas::Clear(const COLORREF color) const
     {
         PRECONDITION(mBuffer != nullptr);
         PRECONDITION(mBufferSize != 0);
@@ -85,6 +44,8 @@ namespace CoTigraphy
         for (size_t i = 0; i < mBufferSize; i += mBytesPerPixel)
         {
             uint8_t* buffer = mBuffer + i;
+            ASSERT(buffer != nullptr);
+
             *(buffer + 0) = GetRValue(color);
             *(buffer + 1) = GetGValue(color);
             *(buffer + 2) = GetBValue(color);
@@ -94,17 +55,13 @@ namespace CoTigraphy
 
     void GridCanvas::DrawGrid(const Grid& grid) const
     {
-        const GridData& gridInfo = grid.GetGridData();
-
-
-
-        for (const auto& cell : gridInfo.mCells)
+        for (size_t week = 0; week < grid.GetWeekCount(); ++week)
         {
-            for (const auto& weeks : cell)
+            for (size_t day = 0; day < grid.GetDayCount(); ++day)
             {
-                DrawRect(static_cast<unsigned int>(weeks.mYIndex), static_cast<unsigned int>(weeks.mXIndex), weeks.mColor);
+                const GridCell& cell = grid.GetCell(week, day);
+                DrawCell(cell.mWeek, cell.mDay, cell.mColor);
             }
-            
         }
     }
 
@@ -113,34 +70,96 @@ namespace CoTigraphy
         const std::array<WormSegment, 4>& wormSegments = worm.GetWorm();
         for (const auto& wormInfo : wormSegments)
         {
-            DrawRectScale(wormInfo.mPoint.y, wormInfo.mPoint.x, wormInfo.mScale, wormInfo.mColor);
+            DrawCellWithScale(wormInfo.mPoint.x, wormInfo.mPoint.y, wormInfo.mScale, wormInfo.mColor);
         }
     }
 
-    RECT GridCanvas::GetRect(const unsigned int y, const unsigned int x, const float scale) const
+    void GridCanvas::DrawCell(_In_ const size_t& week, _In_ const size_t& day, _In_ const COLORREF color) const
     {
-        PRECONDITION(y < mGridCanvasContext.mHeight);
-        PRECONDITION(x < mGridCanvasContext.mWidth);
+        DrawCellWithScale(week, day, 1.0f, color);
+    }
+
+    void GridCanvas::DrawCellWithScale(_In_ const size_t& week, _In_ const size_t& day, _In_ const float scale,
+        _In_ const COLORREF color) const
+    {
+        PRECONDITION(mGridCanvasContext.mCellSize != 0);
+
+        const RECT rect = GetRect(week, day, scale);
+
+        ASSERT(mGridCanvasContext.mWidth <= static_cast<size_t>(std::numeric_limits<LONG>::max()));
+        ASSERT(mGridCanvasContext.mHeight <= static_cast<size_t>(std::numeric_limits<LONG>::max()));
+
+        const LONG width = static_cast<LONG>(mGridCanvasContext.mWidth);
+        const LONG height = static_cast<LONG>(mGridCanvasContext.mHeight);
+
+        const LONG left = std::max<LONG>(0, rect.left);
+        const LONG right = std::min(width, rect.right);
+        const LONG top = std::max<LONG>(0, rect.top);
+        const LONG bottom = std::min(height, rect.bottom);
+
+        // 바이트 접근 오프셋 정의
+        constexpr size_t red = 0;
+        constexpr size_t green = 1;
+        constexpr size_t blue = 2;
+        constexpr size_t alpha = 3;
+
+        // RGB을 COLORREF로 부터 얻어온다
+        const uint8_t r = GetRValue(color);
+        const uint8_t g = GetGValue(color);
+        const uint8_t b = GetBValue(color);
+        constexpr uint8_t a = 255;
+
+        for (size_t yPos = top; yPos < static_cast<size_t>(bottom); ++yPos)
+        {
+            for (size_t xPos = left; xPos < static_cast<size_t>(right); ++xPos)
+            {
+                const size_t index = (yPos * mGridCanvasContext.mWidth + xPos)
+                    * mBytesPerPixel;
+                mBuffer[index + red] = r;
+                mBuffer[index + green] = g;
+                mBuffer[index + blue] = b;
+                mBuffer[index + alpha] = a;
+            }
+        }
+    }
+
+#pragma warning(disable: 4267)  // conversion from 'size_t' to 'const LONG', possible loss of data)
+    RECT GridCanvas::GetRect(_In_ const size_t& week, _In_ const size_t& day, _In_ const float scale) const
+    {
+        PRECONDITION(week < mGridCanvasContext.mWidth);
+        PRECONDITION(day < mGridCanvasContext.mHeight);        
         PRECONDITION(0.0f < scale);
         PRECONDITION(scale <= 1.0f);
 
-        const unsigned int yMarginCount = (y == 0) ? 0 : (y);
-        const unsigned int xMarginCount = (x == 0) ? 0 : (x);
+        ASSERT(week <= static_cast<size_t>(std::numeric_limits<LONG>::max()));
+        ASSERT(day <= static_cast<size_t>(std::numeric_limits<LONG>::max()));
+        ASSERT(mGridCanvasContext.mCellMargin <= static_cast<size_t>(std::numeric_limits<LONG>::max()));
+        ASSERT(mGridCanvasContext.mCellSize <= static_cast<size_t>(std::numeric_limits<LONG>::max()));
 
+        const LONG weekLong = static_cast<LONG>(week);
+        const LONG dayLong = static_cast<LONG>(day);
+        // 마진 계산
+        const LONG xMarginCount = (weekLong == 0) ? 0 : weekLong;
+        const LONG yMarginCount = (dayLong == 0) ? 0 : dayLong;
+
+        // 셀 크기 가져오기
         const LONG cellSize = static_cast<LONG>(mGridCanvasContext.mCellSize);
-        const LONG leftBase = (x * cellSize) + (xMarginCount * mGridCanvasContext.mCellMargin);
-        const LONG topBase = (y * cellSize) + (yMarginCount * mGridCanvasContext.mCellMargin);
+
+        // 기본 좌표 계산
+        const LONG leftBase = (weekLong * cellSize) + (xMarginCount * mGridCanvasContext.mCellMargin);
+        const LONG topBase = (dayLong * cellSize) + (yMarginCount * mGridCanvasContext.mCellMargin);
         const LONG rightBase = leftBase + cellSize;
         const LONG bottomBase = topBase + cellSize;
 
-        // 중앙 좌표
-        const float centerX = (leftBase + rightBase) * 0.5f;
-        const float centerY = (topBase + bottomBase) * 0.5f;
+        // 중앙 좌표 계산
+        const float centerX = static_cast<float>(leftBase + rightBase) * 0.5f;
+        const float centerY = static_cast<float>(topBase + bottomBase) * 0.5f;
 
-        // scaled 반폭, 반높이
-        const float halfWidth = (cellSize * scale) * 0.5f;
-        const float halfHeight = (cellSize * scale) * 0.5f;
+        // 스케일링된 반폭, 반높이 계산
+        const float halfWidth = (static_cast<float>(cellSize) * scale) * 0.5f;
+        const float halfHeight = (static_cast<float>(cellSize) * scale) * 0.5f;
 
+        // 최종 좌표 계산
         const LONG left = static_cast<LONG>(centerX - halfWidth);
         const LONG right = static_cast<LONG>(centerX + halfWidth);
         const LONG top = static_cast<LONG>(centerY - halfHeight);

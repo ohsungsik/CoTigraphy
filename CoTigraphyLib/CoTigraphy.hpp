@@ -5,18 +5,15 @@
 
 #pragma once
 
-#include "CommandLineParser.hpp"
-
 namespace CoTigraphy
 {
-	Error Initialize();
-	void Uninitialize() noexcept;
+	class CommandLineParser;
 
+	Error Initialize(_Out_opt_ std::wstring& githubToken, _Out_opt_ std::wstring& userName);
 
 	// Initialize
-	Error SetupCommandLineParser(_Out_ CoTigraphy::CommandLineParser& commandLineParser, _In_ std::wstring& githubToken, _In_ std::wstring& userName);
+	Error SetupCommandLineParser(_In_ CoTigraphy::CommandLineParser& commandLineParser, _Out_opt_ std::wstring& githubToken, _Out_opt_ std::wstring& userName);
 
-
-
-	// Uninitialize
+	Error Run(_In_ const std::wstring& githubToken, _In_ const std::wstring& userName);
+	
 }	// namespace CoTigraphy

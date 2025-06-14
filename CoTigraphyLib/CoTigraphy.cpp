@@ -10,6 +10,7 @@
 #include <shellapi.h>
 #include <string_view>
 
+#include "CommandLineParser.hpp"
 #include "GitHubContributionCalendarClient.hpp"
 #include "GridCanvas.hpp"
 #include "HandleLeakDetector.hpp"
@@ -20,13 +21,13 @@
 
 namespace CoTigraphy
 {
-    Error Initialize()
+    Error Initialize(_Out_opt_ std::wstring& githubToken, _Out_opt_ std::wstring& userName)
     {
         CoTigraphy::MemoryLeakDetector::Initialize();
         CoTigraphy::HandleLeakDetector::Initialize();
 
-        std::wstring githubToken;
-        std::wstring userName;
+        githubToken.clear();
+        userName.clear();
 
         CoTigraphy::CommandLineParser commandLineParser;
         Error error = SetupCommandLineParser(commandLineParser, githubToken, userName);
@@ -43,72 +44,16 @@ namespace CoTigraphy
             return error;
         }
 
-        GitHubContributionCalendarClient contributionCalendarClient;
-        contributionCalendarClient.Initialize();
-        contributionCalendarClient.SetAccessToken(githubToken);
-
-        const std::wstring reuiqredFields = L"date contributionCount color";    // 필요한 field
-        GridData gridData = contributionCalendarClient.FetchContributionInfo(userName, reuiqredFields);
-
-        constexpr int cellSize = 10; // 각 칸 크기 (px)
-        constexpr int cellMargin = 3; // 칸 간격 (px)
-        constexpr int daysPerWeek = 7; // Sunday~Saturday (7 rows)
-
-        const size_t width = gridData.mColoumCount * (cellSize + cellMargin) - cellMargin;
-        constexpr size_t height = daysPerWeek * (cellSize + cellMargin) - cellMargin;
-
-        GridCanvasContext context;
-        context.mWidth = static_cast<int>(width);
-        context.mHeight = height;
-        context.mCellSize = cellSize;
-        context.mCellMargin = cellMargin;
-
-        GridCanvas gridCanvas;
-        gridCanvas.Create(context);
-
-        Grid grid(gridData);
-        Worm worm(grid);
-
-        WebPWriter webPWriter;
-        webPWriter.Initialize(context.mWidth, context.mHeight);
-
-        int currentLevel = 1;
-        while (true)
-        {
-            bool ret = worm.Move(currentLevel);
-            if (ret == false)
-            {
-                currentLevel++;
-
-                if (currentLevel > gridData.mMaxCount)
-                    break;
-                else
-                    continue;
-            }
-
-            gridCanvas.ClearTo(RGB(0x01, 0x04, 0x09));
-            gridCanvas.DrawGrid(grid);
-            gridCanvas.DrawWorm(worm);
-
-            webPWriter.AddFrame(gridCanvas.GetBuffer());
-        }
-
-
-        const std::wstring fileName = L"animated.webp";
-        webPWriter.SaveToFile(fileName);
-
-        contributionCalendarClient.Uninitialize();
-
         return MAKE_ERROR(eErrorCode::Succeeded);
     }
 
-    void Uninitialize() noexcept
+    Error SetupCommandLineParser(_In_ CoTigraphy::CommandLineParser& commandLineParser,
+                                 _Out_opt_ std::wstring& githubToken,
+                                 _Out_opt_ std::wstring& userName)
     {
-    }
+        githubToken.clear();
+        userName.clear();
 
-    Error SetupCommandLineParser(_In_ CoTigraphy::CommandLineParser& commandLineParser, _Out_ std::wstring& githubToken,
-                                 _Out_ std::wstring& userName)
-    {
         Error error = commandLineParser.AddOption(CommandLineOption{
             L"--help", // mName
             L"-h", // mShortName
@@ -182,6 +127,65 @@ namespace CoTigraphy
             ASSERT(error.IsSucceeded());
             return error;
         }
+
+        return MAKE_ERROR(eErrorCode::Succeeded);
+    }
+
+    Error Run(_In_ const std::wstring& githubToken, _In_ const std::wstring& userName)
+    {
+        GitHubContributionCalendarClient contributionCalendarClient;
+        contributionCalendarClient.Initialize();
+        contributionCalendarClient.SetAccessToken(githubToken);
+
+        const std::wstring reuiqredFields = L"date contributionCount color"; // 필요한 field
+        const GridData gridData = contributionCalendarClient.FetchContributionInfo(userName, reuiqredFields);
+        contributionCalendarClient.Uninitialize();
+
+        constexpr int cellSize = 10; // 각 칸 크기 (px)
+        constexpr int cellMargin = 3; // 칸 간격 (px)
+        constexpr int daysPerWeek = 7; // Sunday~Saturday (7 rows)
+
+        const size_t width = gridData.mWeekCount * (cellSize + cellMargin) - cellMargin;
+        constexpr size_t height = daysPerWeek * (cellSize + cellMargin) - cellMargin;
+
+        GridCanvasContext context;
+        context.mWidth = static_cast<int>(width);
+        context.mHeight = height;
+        context.mCellSize = cellSize;
+        context.mCellMargin = cellMargin;
+
+        GridCanvas gridCanvas;
+        gridCanvas.Create(context);
+
+        Grid grid(gridData);
+        Worm worm(grid);
+
+        WebPWriter webPWriter;
+        webPWriter.Initialize(context.mWidth, context.mHeight);
+
+        uint64_t currentLevel = 1;
+        while (true)
+        {
+            const bool ret = worm.Move(currentLevel);
+            if (ret == false)
+            {
+                currentLevel++;
+
+                if (currentLevel > gridData.mMaxCount)
+                    break;
+
+                continue;
+            }
+
+            gridCanvas.Clear(RGB(0x01, 0x04, 0x09));
+            gridCanvas.DrawGrid(grid);
+            gridCanvas.DrawWorm(worm);
+
+            webPWriter.AddFrame(gridCanvas.GetBuffer());
+        }
+
+        const std::wstring fileName = L"animated.webp";
+        webPWriter.SaveToFile(fileName);
 
         return MAKE_ERROR(eErrorCode::Succeeded);
     }

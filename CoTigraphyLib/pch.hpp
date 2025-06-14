@@ -1,5 +1,5 @@
 ﻿// \file pch.hpp
-// \last_updated 2025-06-09
+// \last_updated 2025-06-14
 // \author Oh Sungsik <ohsungsik@outlook.com>
 // \copyright (C) 2025. Oh Sungsik. All rights reserved.
 
@@ -8,6 +8,7 @@
 #include <pch-common.hpp>
 
 #pragma warning(disable: 26446)	// Prefer to use gsl::at() instead of unchecked subscript operator (bounds.4).
+#pragma warning(disable: 26472)	// Don't use a static_cast for arithmetic conversions. Use brace initialization, gsl::narrow_cast or gsl::narrow (type.1).
 #pragma warning(disable: 26481)	// Don't use pointer arithmetic. Use span instead (bounds.1).
 #pragma warning(disable: 26485)	// Expression 'argv': No array to pointer decay (bounds.3).
 #pragma warning(disable: 26490)	// Don't use reinterpret_cast (type.1).

@@ -1,5 +1,5 @@
 ﻿// \file main.cpp
-// \last_updated 2025-06-10
+// \last_updated 2025-06-14
 // \author Oh Sungsik <ohsungsik@outlook.com>
 // \copyright (C) 2025. Oh Sungsik. All rights reserved.
 
@@ -8,11 +8,16 @@
 
 int wmain()
 {
-	const CoTigraphy::Error error = CoTigraphy::Initialize();
+	std::wstring githubToken;
+	std::wstring userName;
+
+	CoTigraphy::Error error = CoTigraphy::Initialize(githubToken, userName);
 	if (error.IsFailed())
 		return static_cast<int>(error.GetErrorCode());
 
-	CoTigraphy::Uninitialize();
+	error = CoTigraphy::Run(githubToken, userName);
+	if (error.IsFailed())
+		return static_cast<int>(error.GetErrorCode());
 
 	return 0;
 }

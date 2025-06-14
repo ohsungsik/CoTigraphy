@@ -1,5 +1,5 @@
 ﻿// \file WebPWriter.hpp
-// \last_updated 2025-06-13
+// \last_updated 2025-06-14
 // \author Oh Sungsik <ohsungsik@outlook.com>
 // \copyright (C) 2025. Oh Sungsik. All rights reserved.
 
@@ -23,15 +23,15 @@ namespace CoTigraphy
 
         ~WebPWriter();
 
-        void Initialize(const int width, const int height);
-        bool AddFrame(const uint8_t* const buffer);
-        void SaveToFile(const std::wstring& fileName) const;
+        void Initialize(_In_ const size_t& width, _In_ const size_t& height);
+        bool AddFrame(_In_ const uint8_t* const buffer);
+        void SaveToFile(_In_ const std::wstring& fileName) const;
 
     private:
-        const size_t mFrameDelayMs = 80;   // ms
-        size_t mEncodedFrame = 0;        
+        const size_t mFrameDelayMs = 80; // ms
+        size_t mEncodedFrame = 0;
         WebPAnimEncoder* mEncoder = nullptr;
-        WebPPicture mPicture;
-        WebPConfig mConfig;
+        WebPPicture mPicture{};
+        WebPConfig mConfig{};
     };
 }

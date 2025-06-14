@@ -1,5 +1,5 @@
 ﻿// \file MemoryLeakDetector.cpp
-// \last_updated 2025-06-10
+// \last_updated 2025-06-14
 // \author Oh Sungsik <ohsungsik@outlook.com>
 // \copyright (C) 2025. Oh Sungsik. All rights reserved.
 
@@ -79,7 +79,7 @@ namespace CoTigraphy
         }
     }
 
-    void MemoryLeakDetector::OnProcessExit()
+    void MemoryLeakDetector::OnProcessExit() noexcept
     {
         // 메모리 릭 여부 판단
         const bool leakDetected = _CrtDumpMemoryLeaks();

@@ -209,10 +209,10 @@ namespace CoTigraphy
         const auto& weeks = root["data"]["user"]["contributionsCollection"]["contributionCalendar"]["weeks"];
         ASSERT(weeks.is_array());
 
-        gridData.mColoumCount = weeks.size();
+        gridData.mWeekCount = weeks.size();
 
-        size_t yIndex = 0;
-        size_t xIndex = 0;
+        size_t dayIndex = 0;
+        size_t weekIndex = 0;
 
         for (const auto& week : weeks)
         {
@@ -220,15 +220,15 @@ namespace CoTigraphy
             ASSERT(days.is_array());
 
             const size_t rowCount = days.size();
-            if (gridData.mRowCount != 0)
+            if (gridData.mDayCount != 0)
             {
                 // 오늘이 수요일인 경우
                 // 일, 월, 화, 수 까지 rowCount가 4가 될 수 있다.
                 // 따라서 작거나 같은경우까지 혀용한다.
-                ASSERT(rowCount <= gridData.mRowCount);
+                ASSERT(rowCount <= gridData.mDayCount);
             }
 
-            gridData.mRowCount = rowCount;
+            gridData.mDayCount = rowCount;
 
             std::vector<GridCell> gridCells;
 
@@ -238,23 +238,23 @@ namespace CoTigraphy
                 cell.mCount = day.value("contributionCount", 0);
                 const std::string colorHex = day.value("color", "#FFFFFF");
                 cell.mColor = HexToColorRef(Utf8ToWideString(colorHex));
-                cell.mXIndex = xIndex;
-                cell.mYIndex = yIndex;
+                cell.mWeek = weekIndex;
+                cell.mDay = dayIndex;
 
                 gridData.mMaxCount = std::max(cell.mCount, gridData.mMaxCount);
                 gridCells.push_back(cell);
 
-                ++yIndex;
+                ++dayIndex;
             }
 
             gridData.mCells.push_back(gridCells);
 
-            xIndex++;
-            yIndex = 0;
+            weekIndex++;
+            dayIndex = 0;
         }
 
-        POSTCONDITION(gridData.mColoumCount != 0);
-        POSTCONDITION(gridData.mRowCount != 0);
+        POSTCONDITION(gridData.mWeekCount != 0);
+        POSTCONDITION(gridData.mDayCount != 0);
         POSTCONDITION(gridData.mMaxCount != 0);
         POSTCONDITION(gridData.mCells.empty() == false);
 
@@ -273,11 +273,11 @@ namespace CoTigraphy
         std::wstring wide(sizeRequired, 0);
         MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), -1, wide.data(), sizeRequired);
 
-        wide.resize(sizeRequired - 1);
+        wide.resize(static_cast<size_t>(sizeRequired) - 1);  // null 문자 제거
         return wide;
     }
 
-    std::string GitHubContributionCalendarClient::WideStringToUtf8(const std::wstring& wide) const
+    std::string GitHubContributionCalendarClient::WideStringToUtf8(_In_ const std::wstring& wide) const
     {
         if (wide.empty())
             return "";
@@ -289,7 +289,7 @@ namespace CoTigraphy
         std::string utf8(sizeRequired, 0);
         WideCharToMultiByte(CP_UTF8, 0, wide.c_str(), -1, utf8.data(), sizeRequired, nullptr, nullptr);
 
-        utf8.resize(sizeRequired - 1);
+        utf8.resize(static_cast<size_t>(sizeRequired) - 1);  // null 문자 제거
         return utf8;
     }
 
@@ -302,10 +302,6 @@ namespace CoTigraphy
         const unsigned int g = std::stoi(hex.substr(3, 2), nullptr, 16);
         const unsigned int b = std::stoi(hex.substr(5, 2), nullptr, 16);
 
-        POSTCONDITION(r <= 255);
-        POSTCONDITION(g <= 255);
-        POSTCONDITION(b <= 255);
-
         return RGB(r, g, b); // Macro: ((BYTE)(r) | ((BYTE)(g) << 8) | ((BYTE)(b) << 16))
     }
 
@@ -314,6 +310,7 @@ namespace CoTigraphy
     {
         const size_t totalSize = size * nmemb;
         std::vector<char>* buffer = static_cast<std::vector<char>*>(userp);
+        ASSERT(buffer != nullptr);
 
         size_t currentSize = buffer->size();
         if (currentSize > 0)

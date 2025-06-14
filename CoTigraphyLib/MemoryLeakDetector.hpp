@@ -1,5 +1,5 @@
 ﻿// \file MemoryLeakDetector.hpp
-// \last_updated 2025-06-08
+// \last_updated 2025-06-14
 // \author Oh Sungsik <ohsungsik@outlook.com>
 // \copyright (C) 2025. Oh Sungsik. All rights reserved.
 
@@ -23,6 +23,6 @@ namespace CoTigraphy
         static void Initialize() noexcept;
 
     private:
-        static void OnProcessExit();
+        static void OnProcessExit() noexcept;
     };
 }   // namespace CoTigraphy

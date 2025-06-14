@@ -1,5 +1,5 @@
 ﻿// \file Worm.hpp
-// \last_updated 2025-06-13
+// \last_updated 2025-06-14
 // \author Oh Sungsik <ohsungsik@outlook.com>
 // \copyright (C) 2025. Oh Sungsik. All rights reserved.
 
@@ -46,10 +46,7 @@ namespace CoTigraphy
     private:
         bool FindPathToClosestTarget(const uint64_t& currentLevel, std::vector<POINT>& outPath) const;
 
-        bool IsEqual(const POINT& lhs, const POINT& rhs) const
-        {
-            return lhs.x == rhs.x && lhs.y == rhs.y;
-        }
+        bool IsEqual(const POINT& lhs, const POINT& rhs) const noexcept;
 
     private:
         Grid& mGrid;

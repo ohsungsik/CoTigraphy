@@ -40,6 +40,7 @@ namespace CoTigraphy
         bool IsInside(const size_t& y, const size_t& x) const;
         uint64_t GetLevel(const size_t& y, const size_t& x) const;
 
+        void SetLevel(const size_t& y, const size_t& x, const uint64_t& level);
         void SetColor(const size_t& y, const size_t& x, const COLORREF& color);
 
     private:

@@ -8,26 +8,31 @@
 
 namespace CoTigraphy
 {
-    Grid::Grid(GridData gridData) noexcept
-        : mGridData(std::move(gridData))
-    {
-    }
+	Grid::Grid(GridData gridData) noexcept
+		: mGridData(std::move(gridData))
+	{
+	}
 
-    Grid::~Grid()
-    = default;
+	Grid::~Grid()
+		= default;
 
-    bool Grid::IsInside(const size_t& y, const size_t& x) const
-    {
-        return x < mGridData.mColoumCount && y < mGridData.mRowCount;
-    }
+	bool Grid::IsInside(const size_t& y, const size_t& x) const
+	{
+		return x < mGridData.mColoumCount && y < mGridData.mRowCount;
+	}
 
-    uint64_t Grid::GetLevel(const size_t& y, const size_t& x) const
-    {
-        return mGridData.mCells[y][x].mCount;
-    }
+	uint64_t Grid::GetLevel(const size_t& y, const size_t& x) const
+	{
+		return mGridData.mCells[x][y].mCount;
+	}
 
-    void Grid::SetColor(const size_t& y, const size_t& x, const COLORREF& color)
-    {
-        mGridData.mCells[y][x].mColor = color;
-    }
+	void Grid::SetLevel(const size_t& y, const size_t& x, const uint64_t& level)
+	{
+		mGridData.mCells[x][y].mCount = level;
+	}
+
+	void Grid::SetColor(const size_t& y, const size_t& x, const COLORREF& color)
+	{
+		mGridData.mCells[x][y].mColor = color;
+	}
 } // CoTigraphy

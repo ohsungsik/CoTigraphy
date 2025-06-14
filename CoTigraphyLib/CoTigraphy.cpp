@@ -118,7 +118,7 @@ namespace CoTigraphy
         WebPWriter webPWriter;
         webPWriter.Initialize(context.mWidth, context.mHeight);
 
-        int currentLevel = 0;
+        int currentLevel = 1;
         while (true)
         {
             bool ret = worm.Move(currentLevel);

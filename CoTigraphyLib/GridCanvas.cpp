@@ -80,7 +80,7 @@ namespace CoTigraphy
     }
 
     void GridCanvas::DrawCellWithScale(_In_ const size_t& week, _In_ const size_t& day, _In_ const float scale,
-        _In_ const COLORREF color) const
+                                       _In_ const COLORREF color) const
     {
         PRECONDITION(mGridCanvasContext.mCellSize != 0);
 
@@ -127,7 +127,7 @@ namespace CoTigraphy
     RECT GridCanvas::GetRect(_In_ const size_t& week, _In_ const size_t& day, _In_ const float scale) const
     {
         PRECONDITION(week < mGridCanvasContext.mWidth);
-        PRECONDITION(day < mGridCanvasContext.mHeight);        
+        PRECONDITION(day < mGridCanvasContext.mHeight);
         PRECONDITION(0.0f < scale);
         PRECONDITION(scale <= 1.0f);
 

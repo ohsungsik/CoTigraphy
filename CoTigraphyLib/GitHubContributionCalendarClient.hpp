@@ -56,7 +56,8 @@ namespace CoTigraphy
          * \brief 요청한 Github 사용자로부터 Contribution calendar 정보를 가져온다.
          * \return Contribution calendar를 GridData 형태로 파싱한 데이터
          */
-        [[nodiscard]] GridData FetchContributionInfo(_In_ const std::wstring& userName, _In_ const std::wstring& fields) const;
+        [[nodiscard]] GridData FetchContributionInfo(_In_ const std::wstring& userName,
+                                                     _In_ const std::wstring& fields) const;
 
     private:
         /**

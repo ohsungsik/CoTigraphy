@@ -25,4 +25,4 @@ namespace CoTigraphy
     private:
         static void OnProcessExit() noexcept;
     };
-}   // namespace CoTigraphy
+} // namespace CoTigraphy

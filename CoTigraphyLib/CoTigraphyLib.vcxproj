@@ -263,7 +263,6 @@
     <ClInclude Include="HandleLeakDetector.hpp" />
     <ClInclude Include="MemoryLeakDetector.hpp" />
     <ClInclude Include="pch.hpp" />
-    <ClInclude Include="resource.h" />
     <ClInclude Include="VersionInfo.hpp" />
     <ClInclude Include="WebPWriter.hpp" />
     <ClInclude Include="Worm.hpp" />

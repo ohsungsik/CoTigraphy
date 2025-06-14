@@ -6,10 +6,6 @@
 #include "pch.hpp"
 #include "Worm.hpp"
 
-#include <map>
-#include <set>
-#include <queue>
-
 #include "Grid.hpp"
 
 namespace CoTigraphy
@@ -29,7 +25,7 @@ namespace CoTigraphy
     Worm::~Worm()
     = default;
 
-    bool Worm::Move(const uint64_t& currentLevel)
+    bool Worm::Move(_In_ const uint64_t& contributionCount)
     {
         // 시작은 1부터 시작
         // 0만 있으면 아무것도 하지 않음
@@ -39,7 +35,7 @@ namespace CoTigraphy
 
         if (mPlannedPath.empty())
         {
-            if (!FindPathToClosestTarget(currentLevel, mPlannedPath))
+            if (!FindPathToClosestTarget(contributionCount, mPlannedPath))
             {
                 // 이동 가능한 Target 없음 → 아무것도 하지 않음
                 return false;
@@ -65,75 +61,97 @@ namespace CoTigraphy
         return true;
     }
 
-    bool Worm::FindPathToClosestTarget(const uint64_t& currentLevel, std::vector<POINT>& outPath) const
+    bool Worm::FindPathToClosestTarget(_In_ const uint64_t& currentContributionCount,
+                                       _Out_opt_ std::vector<POINT>& outPath) const
     {
-        struct Node
-        {
-            POINT pt;
-            POINT parent;
-        };
+        outPath.clear();
 
+        // BFS 시작 위치는 지렁이 머리 (맨 앞 세그먼트)
         const POINT start = mWormSegments[0].mPoint;
 
-        std::queue<Node> q;
-        std::set<std::pair<int, int>> visited;
-        std::map<std::pair<int, int>, POINT> parentMap;
+        std::queue<POINT> bfsQueue; // BFS 탐색 큐
+        std::set<std::pair<int, int>> visited; // 방문한 위치를 저장 (중복 방문 방지)
+        std::map<std::pair<int, int>, POINT> parentMap; // 역추적을 위한 부모 정보 저장 (자식 위치 -> 부모 위치)
 
-        q.push({start, {-1, -1}});
+        // 시작 지점 등록
+        bfsQueue.push(start);
         visited.insert({start.x, start.y});
 
-        constexpr std::array<POINT, 4> directions = {
-            POINT{-1, 0},
-            POINT{1, 0},
-            POINT{0, -1},
-            POINT{0, 1}
-        };
 
-        while (!q.empty())
+        // BFS 탐색 시작
+        while (!bfsQueue.empty())
         {
-            const Node node = q.front();
-            q.pop();
+            const POINT current = bfsQueue.front();
+            bfsQueue.pop();
 
-            const int cx = node.pt.x;
-            const int cy = node.pt.y;
-
-            if (mGrid.IsInside(static_cast<size_t>(cx), static_cast<size_t>(cy))
-                && mGrid.GetContributionCount(static_cast<size_t>(cx), static_cast<size_t>(cy)) <= currentLevel
-                && mGrid.GetContributionCount(static_cast<size_t>(cx), static_cast<size_t>(cy)) != 0
-                && !(cx == start.x && cy == start.y)) // 자신은 제외
+            // 현재 위치가 목표 조건에 부합하면 경로 복원
+            if (IsTargetCell(current, currentContributionCount, start))
             {
-                // 역추적하여 경로 복원
-                POINT cur = node.pt;
-                while (true)
-                {
-                    outPath.push_back(cur);
-                    const auto it = parentMap.find({cur.x, cur.y});
-                    if (it == parentMap.end()) break; // start에 도달했거나 map 누락
-                    cur = it->second;
-                }
-                std::reverse(outPath.begin(), outPath.end());
+                // 역추적 경로 생성
+                BuildPath(current, parentMap, outPath);
                 return true;
             }
 
-            for (const POINT& d : directions)
-            {
-                const POINT next = {cx + d.x, cy + d.y};
-                const auto key = std::make_pair(next.x, next.y);
-
-                if (!mGrid.IsInside(static_cast<size_t>(next.x), static_cast<size_t>(next.y))) continue;
-                if (visited.count(key)) continue;
-
-                visited.insert(key);
-                parentMap[key] = node.pt;
-                q.push({next, node.pt});
-            }
+            // 다음 탐색 가능한 이웃 노드를 큐에 추가
+            EnqueueNeighbors(current, bfsQueue, visited, parentMap);
         }
 
-        return false; // 대상 없음
+        // 더 이상 유효한 목표가 없음
+        return false;
     }
 
-    bool Worm::IsEqual(const POINT& lhs, const POINT& rhs) const noexcept
+    std::pair<int, int> Worm::MakeKey(_In_ const POINT& pt) const noexcept
     {
-        return lhs.x == rhs.x && lhs.y == rhs.y;
+        return {pt.x, pt.y};
+    }
+
+    bool Worm::IsTargetCell(_In_ const POINT& pt, _In_ const uint64_t& currentContributionCount,
+                            _In_ const POINT& start) const
+    {
+        if (!mGrid.IsInside(static_cast<size_t>(pt.x), static_cast<size_t>(pt.y)))
+            return false;
+
+        const uint64_t count = mGrid.GetContributionCount(static_cast<size_t>(pt.x), static_cast<size_t>(pt.y));
+        return (count != 0 && count <= currentContributionCount && !(pt.x == start.x && pt.y == start.y));
+    }
+
+    void Worm::BuildPath(_In_ const POINT& goal, _In_ const std::map<std::pair<int, int>, POINT>& parentMap,
+                         _Out_ std::vector<POINT>& outPath) const
+    {
+        POINT cur = goal;
+        while (true)
+        {
+            outPath.push_back(cur);
+            const auto& it = parentMap.find(MakeKey(cur));
+            if (it == parentMap.end()) break;
+            cur = it->second;
+        }
+        std::reverse(outPath.begin(), outPath.end());
+    }
+
+    void Worm::EnqueueNeighbors(_In_ const POINT& current, _In_ std::queue<POINT>& bfsQueue,
+                                _Inout_ std::set<std::pair<int, int>>& visited,
+                                _Inout_ std::map<std::pair<int, int>, POINT>& parentMap) const
+    {
+        // 상하좌우 방향 정의
+        constexpr std::array<POINT, 4> directions = {
+            POINT{-1, 0}, // 위
+            POINT{1, 0}, // 아래
+            POINT{0, -1}, // 왼쪽
+            POINT{0, 1} // 오른쪽
+        };
+
+        for (const POINT& d : directions)
+        {
+            const POINT next = {current.x + d.x, current.y + d.y};
+            const std::pair<int, int> key = MakeKey(next);
+
+            if (!mGrid.IsInside(static_cast<size_t>(next.x), static_cast<size_t>(next.y))) continue;
+            if (visited.count(key)) continue;
+
+            visited.insert(key);
+            parentMap[key] = current;
+            bfsQueue.push(next);
+        }
     }
 } // CoTigraphy

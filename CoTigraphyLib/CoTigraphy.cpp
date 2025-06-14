@@ -166,7 +166,7 @@ namespace CoTigraphy
         uint64_t currentLevel = 1;
         while (true)
         {
-            const bool ret = worm.Move(currentLevel);
+            bool ret = worm.Move(currentLevel);
             if (ret == false)
             {
                 currentLevel++;
@@ -181,7 +181,8 @@ namespace CoTigraphy
             gridCanvas.DrawGrid(grid);
             gridCanvas.DrawWorm(worm);
 
-            webPWriter.AddFrame(gridCanvas.GetBuffer());
+            ret = webPWriter.AddFrame(gridCanvas.GetBuffer());
+            ASSERT(ret == true);
         }
 
         const std::wstring fileName = L"animated.webp";

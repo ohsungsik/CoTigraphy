@@ -8,16 +8,16 @@
 
 int wmain()
 {
-	std::wstring githubToken;
-	std::wstring userName;
+    std::wstring githubToken;
+    std::wstring userName;
 
-	CoTigraphy::Error error = CoTigraphy::Initialize(githubToken, userName);
-	if (error.IsFailed())
-		return static_cast<int>(error.GetErrorCode());
+    CoTigraphy::Error error = CoTigraphy::Initialize(githubToken, userName);
+    if (error.IsFailed())
+        return static_cast<int>(error.GetErrorCode());
 
-	error = CoTigraphy::Run(githubToken, userName);
-	if (error.IsFailed())
-		return static_cast<int>(error.GetErrorCode());
+    error = CoTigraphy::Run(githubToken, userName);
+    if (error.IsFailed())
+        return static_cast<int>(error.GetErrorCode());
 
-	return 0;
+    return 0;
 }

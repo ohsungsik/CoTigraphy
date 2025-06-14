@@ -9,10 +9,12 @@
 #pragma warning(push)   // nlohmann json 라이브러리에서 발생하는 경고 비활성화, 해결하기 귀찮은 것들...
 #pragma warning(disable: 26429) // Symbol is never tested for nullness, it can be marked as not_null (f.23)
 #pragma warning(disable: 26432) // If you define or delete any default operation in a type, define or delete them all (c.21)
+
 #pragma warning(disable: 26438) // Avoid 'goto' (es.76)
 #pragma warning(disable: 26440) // Function can be declared 'noexcept' (f.6)
 #pragma warning(disable: 26446) // Prefer to use gsl::at() instead of unchecked subscript operator (bounds.4)
 #pragma warning(disable: 26447) // The function is declared 'noexcept' but calls function which may throw exceptions (f.6)
+
 #pragma warning(disable: 26451) // Arithmetic overflow: cast before subtraction to avoid overflow (io.2)
 #pragma warning(disable: 26455) // Default constructor should not throw. Declare it 'noexcept' (f.6)
 #pragma warning(disable: 26472) // Don't use a static_cast for arithmetic conversions (type.1)
@@ -273,7 +275,7 @@ namespace CoTigraphy
         std::wstring wide(sizeRequired, 0);
         MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), -1, wide.data(), sizeRequired);
 
-        wide.resize(static_cast<size_t>(sizeRequired) - 1);  // null 문자 제거
+        wide.resize(static_cast<size_t>(sizeRequired) - 1); // null 문자 제거
         return wide;
     }
 
@@ -289,7 +291,7 @@ namespace CoTigraphy
         std::string utf8(sizeRequired, 0);
         WideCharToMultiByte(CP_UTF8, 0, wide.c_str(), -1, utf8.data(), sizeRequired, nullptr, nullptr);
 
-        utf8.resize(static_cast<size_t>(sizeRequired) - 1);  // null 문자 제거
+        utf8.resize(static_cast<size_t>(sizeRequired) - 1); // null 문자 제거
         return utf8;
     }
 

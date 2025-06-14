@@ -55,6 +55,7 @@
 /// 따라서 일관되게 constexpr을 적용할 수 없으므로 무시한다.
 #pragma warning(disable: 26814) // The const variable 'leakDetected' can be computed at compile-time. Consider using constexpr (con.5).
 
+
 namespace CoTigraphy
 {
     MemoryLeakDetector::MemoryLeakDetector() noexcept
@@ -90,4 +91,4 @@ namespace CoTigraphy
             DebugBreak(); // 메모리 릭 발생!!!
         }
     }
-}   // namespace CoTigraphy
+} // namespace CoTigraphy

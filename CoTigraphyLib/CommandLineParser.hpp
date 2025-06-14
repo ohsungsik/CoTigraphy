@@ -1,5 +1,5 @@
 ﻿// \file CommandLineParser.hpp
-// \last_updated 2025-06-08
+// \last_updated 2025-06-14
 // \author Oh Sungsik <ohsungsik@outlook.com>
 // \copyright (C) 2025. Oh Sungsik. All rights reserved.
 
@@ -9,23 +9,35 @@
 #include <string>
 #include <vector>
 
-class UnitTest_CommandLineParser;
-
 namespace CoTigraphy
 {
-    // Describes a single command-line option
+    /**
+     * @brief 명령줄 옵션 정보 구조체
+     * @details
+     * - 각 명령줄 옵션에 대한 이름, 설명, 값 요구 여부 등을 포함
+     * - 파서에 등록하여 처리할 수 있음
+     */
     struct CommandLineOption
     {
-        std::wstring mName; // Long name, e.g. "--help"
-        std::wstring mShortName; // Short name, e.g. "-h"
-        std::wstring mDescription; // Help description
-        bool mRequiresValue; // Does this option require a following value?
-        bool mCausesExit; // Should parsing stop after this option?
-        std::function<void(const std::wstring&)> mHandler; // Called with the option's value (or empty)
+        std::wstring mName; // 긴 이름, 예: "--help"
+        std::wstring mShortName; // 짧은 이름, 예: "-h"
+        std::wstring mDescription; // 도움말에 표시될 설명
+        bool mRequiresValue; // 옵션 값이 필수인지 여부
+        bool mCausesExit; // true인 경우, 옵션 처리 후 프로그램 종료
+        std::function<void(const std::wstring&)> mHandler; // 옵션 처리 함수 (값이 없으면 빈 문자열 전달)
 
-        bool IsValid() const noexcept
+        /**
+         * @brief 옵션 필드가 모두 유효한지 검사
+         * @return true이면 mName, mShortName, mDescription이 모두 비어있지 않음
+         * @contract strong - 불변성 검사용, 부작용 없음
+         */
+        _Success_(return == true)
+
+        [[nodiscard]] bool IsValid() const noexcept
         {
-            return !mName.empty() && !mShortName.empty() && !mDescription.empty();
+            return mName.empty() == false
+                && mShortName.empty() == false
+                && mDescription.empty() == false;
         }
     };
 
@@ -56,10 +68,9 @@ namespace CoTigraphy
          * \param option 등록할 커맨드 라인 옵션 객체, 유효한 옵션이여야 함.
          * \return 등록 성공 여부 반환
          */
-        _Success_(static_cast<eErrorCode>(return) == eErrorCode::Succeeded)
         [[nodiscard]] Error AddOption(const CommandLineOption& option);
 
-        
+
         /**
          * \brief argv/argc 형식의 커맨드 라인 인자를 파싱
          * \contract weak argc와, argv를 검사하고 필요 시 오류 반환
@@ -67,9 +78,8 @@ namespace CoTigraphy
          * \param argv 인자 문자열 배열. argv[0]은 프로그램 경로로 판단하며, 나머지가 파싱 대상
          * \return 파싱 성공 여부 오류 코드 반환
          */
-        _Success_(static_cast<eErrorCode>(return) == eErrorCode::Succeeded)
         [[nodiscard]] Error Parse(_In_ const int argc, _In_reads_opt_z_(argc) wchar_t* argv[]);
-        
+
         /**
          * \brief 문자열 벡터 형식의 커맨드 라인 인자를 파싱
          * \contract weak 입력 베터를 검사하고 필요 시 오류 반환
@@ -77,7 +87,6 @@ namespace CoTigraphy
          * \return 성공 여부 오류 코드 반환
          * \pre args.empty() == false
          */
-        _Success_(static_cast<eErrorCode>(return) == eErrorCode::Succeeded)
         [[nodiscard]] Error Parse(_In_ const std::vector<std::wstring>& args);
 
         /**
@@ -89,7 +98,6 @@ namespace CoTigraphy
         std::wostream& PrintHelpTo(_In_ std::wostream& os) const;
 
     private:
-        
         /**
          * \brief 개별 토큰을 처리하여 옵션 핸들러를 호출
          * \param args 파싱할 인자 문자열 벡터
@@ -97,7 +105,6 @@ namespace CoTigraphy
          * \return 성공 여부 오류 코드 반환
          * \pre index < args.size()
          */
-        _Success_(static_cast<eErrorCode>(return) == eErrorCode::Succeeded)
         [[nodiscard]] Error ProcessToken(_In_ const std::vector<std::wstring>& args, _Inout_ size_t& index);
 
     private:

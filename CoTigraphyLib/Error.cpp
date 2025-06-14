@@ -1,5 +1,5 @@
 ﻿// \file Error.cpp
-// \last_updated 2025-06-08
+// \last_updated 2025-06-14
 // \author Oh Sungsik <ohsungsik@outlook.com>
 // \copyright (C) 2025. Oh Sungsik. All rights reserved.
 
@@ -58,7 +58,7 @@ namespace CoTigraphy
     }
 
     Error::~Error()
-        = default;
+    = default;
 
     bool Error::operator==(const Error& rhs) const noexcept
     {
@@ -99,4 +99,4 @@ namespace CoTigraphy
 
     Error::Error() noexcept
     = default;
-}   // namespace CoTigraphy
+} // namespace CoTigraphy

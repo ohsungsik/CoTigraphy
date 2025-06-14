@@ -1,159 +1,331 @@
 ﻿// \file GitHubContributionCalendarClient.cpp
-// \last_updated 2025-06-13
+// \last_updated 2025-06-14
 // \author Oh Sungsik <ohsungsik@outlook.com>
 // \copyright (C) 2025. Oh Sungsik. All rights reserved.
 
 #include "pch.hpp"
 #include "GitHubContributionCalendarClient.hpp"
 
-#pragma warning(push, 0)   // simdjson 경고 비활성화
-#include <simdjson.h>
+#pragma warning(push)   // nlohmann json 라이브러리에서 발생하는 경고 비활성화, 해결하기 귀찮은 것들...
+#pragma warning(disable: 26429) // Symbol is never tested for nullness, it can be marked as not_null (f.23)
+#pragma warning(disable: 26432) // If you define or delete any default operation in a type, define or delete them all (c.21)
+#pragma warning(disable: 26438) // Avoid 'goto' (es.76)
+#pragma warning(disable: 26440) // Function can be declared 'noexcept' (f.6)
+#pragma warning(disable: 26446) // Prefer to use gsl::at() instead of unchecked subscript operator (bounds.4)
+#pragma warning(disable: 26447) // The function is declared 'noexcept' but calls function which may throw exceptions (f.6)
+#pragma warning(disable: 26451) // Arithmetic overflow: cast before subtraction to avoid overflow (io.2)
+#pragma warning(disable: 26455) // Default constructor should not throw. Declare it 'noexcept' (f.6)
+#pragma warning(disable: 26472) // Don't use a static_cast for arithmetic conversions (type.1)
+#pragma warning(disable: 26476) // Symbol uses a naked union with multiple type pointers: Use variant instead (type.7)
+#pragma warning(disable: 26482) // Only index into arrays using constant expressions (bounds.2)
+#pragma warning(disable: 26493) // Don't use C-style casts (type.4)
+#pragma warning(disable: 26497) // Consider marking function as constexpr (f.4)
+#pragma warning(disable: 26819) // Unannotated fallthrough between switch labels (es.78)
+
+#include <nlohmann/json.hpp>
 #pragma warning(pop)
 
 namespace CoTigraphy
 {
-	GitHubContributionCalendarClient::GitHubContributionCalendarClient() noexcept
-		= default;
+    GitHubContributionCalendarClient::GitHubContributionCalendarClient() noexcept
+    = default;
 
-	GitHubContributionCalendarClient::~GitHubContributionCalendarClient()
-		= default;
+    GitHubContributionCalendarClient::~GitHubContributionCalendarClient()
+    = default;
 
-	bool GitHubContributionCalendarClient::Initialize()
-	{
-		const CURLcode code = curl_global_init(CURL_GLOBAL_DEFAULT);
-		ASSERT(code == CURLE_OK);
+    void GitHubContributionCalendarClient::Initialize()
+    {
+        const CURLcode code = curl_global_init(CURL_GLOBAL_DEFAULT);
+        ASSERT(code == CURLE_OK);
 
-		mCurl = curl_easy_init();
-		ASSERT(mCurl != nullptr);
+        mCurl = curl_easy_init();
+        ASSERT(mCurl != nullptr);
 
-		mHeaders = curl_slist_append(mHeaders, "User-Agent: CoTigraphy/1.0");
-		mHeaders = curl_slist_append(mHeaders, "Content-Type: application/json");
+        mHeaders = curl_slist_append(mHeaders, "User-Agent: CoTigraphy/1.0");
+        ASSERT(mHeaders != nullptr);
 
-		return true;
-	}
+        mHeaders = curl_slist_append(mHeaders, "Content-Type: application/json");
+        ASSERT(mHeaders != nullptr);
 
-	void GitHubContributionCalendarClient::Uninitialize() const
-	{
-		if (mHeaders)
-		{
-			curl_slist_free_all(mHeaders);
-		}
+        POSTCONDITION(mCurl != nullptr);
+        POSTCONDITION(mHeaders != nullptr);
+    }
 
-		if (mCurl)
-		{
-			curl_easy_cleanup(mCurl);
-		}
+    void GitHubContributionCalendarClient::Uninitialize()
+    {
+        PRECONDITION(mHeaders != nullptr);
+        PRECONDITION(mCurl != nullptr);
 
-		curl_global_cleanup();
-	}
+        curl_slist_free_all(mHeaders);
+        mHeaders = nullptr;
 
-	void GitHubContributionCalendarClient::SetAccessToken(const std::wstring& token)
-	{
-		PRECONDITION(token.empty() == false);
+        curl_easy_cleanup(mCurl);
+        mCurl = nullptr;
 
-		// Convert token to UTF-8
-		const std::string tokenUtf8 = WideStringToUtf8(token);
+        curl_global_cleanup();
 
-		const std::string authHeader = "Authorization: Bearer " + tokenUtf8;
+        POSTCONDITION(mHeaders == nullptr);
+        POSTCONDITION(mCurl == nullptr);
+    }
 
-		mHeaders = curl_slist_append(mHeaders, authHeader.c_str());
-	}
+    void GitHubContributionCalendarClient::SetAccessToken(_In_ const std::wstring& token)
+    {
+        PRECONDITION(token.empty() == false);
+        PRECONDITION(mHeaders != nullptr); // Initialize를 먼저 호출해야 함
 
-	GridData GitHubContributionCalendarClient::FetchContributionInfo() const
-	{
-		PRECONDITION(mHeaders != nullptr); // SetAccessToken()을 먼저 호출해야 함
+        const std::string tokenUtf8 = WideStringToUtf8(token);
+        const std::string authHeader = "Authorization: Bearer " + tokenUtf8;
 
-		const std::string url = WideStringToUtf8(L"https://api.github.com/graphql");
+        mHeaders = curl_slist_append(mHeaders, authHeader.c_str());
 
-		// GraphQL Query Payload
-		const char* graphqlQuery = R"({
-            "query": "query { user(login: \"ohsungsik\") { contributionsCollection { contributionCalendar { weeks { contributionDays { date contributionCount color } } } } } }"
-        })";
+        POSTCONDITION(mHeaders != nullptr);
+    }
 
-		std::vector<char> responseBuffer;
-		responseBuffer.push_back('\0'); // Initialize with empty string
+    /**
+     * @brief GitHub의 기여 캘린더 데이터를 요청하고 파싱하여 GridData로 반환
+     * @param userName GitHub 사용자 로그인 이름
+     * @param fields GraphQL 요청 시 포함할 필드 목록 (예: "date contributionCount color")
+     * @return GridData 파싱된 기여 데이터
+     * @contract strong 모든 요청 실패 시 ASSERT 종료
+     * @pre mHeaders != nullptr (SetAccessToken 이후 호출해야 함)
+     * @post GridData 내부에 기여 데이터가 2차원 벡터로 채워짐
+     * @details
+     * - GraphQL API를 통해 JSON 형태로 기여 정보 요청
+     * - 응답 결과는 Parse() 함수를 통해 파싱됨
+     */
+    GridData GitHubContributionCalendarClient::FetchContributionInfo(_In_ const std::wstring& userName,
+                                                                     _In_ const std::wstring& fields) const
+    {
+        PRECONDITION(mCurl != nullptr); // Initialize()를 먼저 호출해야 함
+        PRECONDITION(mHeaders != nullptr); // SetAccessToken()을 먼저 호출해야 함
 
-		curl_easy_setopt(mCurl, CURLOPT_URL, url.c_str());
-		curl_easy_setopt(mCurl, CURLOPT_HTTPHEADER, mHeaders);
+        // GraphQL Query Payload
+        constexpr const wchar_t* const kGraphQlUrl = L"https://api.github.com/graphql";
+        const std::string url = WideStringToUtf8(kGraphQlUrl);
 
-		curl_easy_setopt(mCurl, CURLOPT_POST, 1L);
-		curl_easy_setopt(mCurl, CURLOPT_POSTFIELDS, graphqlQuery);
+        const std::wstring graphqlQueryW = BuildContributionQuery(userName, fields);
+        const std::string graphqlQuery = WideStringToUtf8(graphqlQueryW);
 
-		curl_easy_setopt(mCurl, CURLOPT_VERBOSE, 0L);
+        std::vector<char> responseBuffer(1, '\0');
 
-		curl_easy_setopt(mCurl, CURLOPT_WRITEFUNCTION, WriteCallback);
-		curl_easy_setopt(mCurl, CURLOPT_WRITEDATA, &responseBuffer);
+        curl_easy_setopt(mCurl, CURLOPT_URL, url.c_str());
+        curl_easy_setopt(mCurl, CURLOPT_HTTPHEADER, mHeaders);
 
-		curl_easy_setopt(mCurl, CURLOPT_FORBID_REUSE, 1L); //  connection 재사용 방지
-		curl_easy_setopt(mCurl, CURLOPT_FRESH_CONNECT, 1L); // connection pool에서 즉시 종료
-		curl_easy_setopt(mCurl, CURLOPT_SSL_SESSIONID_CACHE, 0L); // Schannel 사용 시 강제 cleanup
+        curl_easy_setopt(mCurl, CURLOPT_POST, 1L);
+        curl_easy_setopt(mCurl, CURLOPT_POSTFIELDS, graphqlQuery.c_str());
 
-		const CURLcode res = curl_easy_perform(mCurl);
+        curl_easy_setopt(mCurl, CURLOPT_VERBOSE, 0L);
 
-		ASSERT(res == CURLE_OK);
+        curl_easy_setopt(mCurl, CURLOPT_WRITEFUNCTION, WriteCallback);
+        curl_easy_setopt(mCurl, CURLOPT_WRITEDATA, &responseBuffer);
 
-		const std::string responseStr(responseBuffer.data());
+        curl_easy_setopt(mCurl, CURLOPT_FORBID_REUSE, 1L); //  connection 재사용 방지
+        curl_easy_setopt(mCurl, CURLOPT_FRESH_CONNECT, 1L); // connection pool에서 즉시 종료
+        curl_easy_setopt(mCurl, CURLOPT_SSL_SESSIONID_CACHE, 0L); // Schannel 사용 시 강제 cleanup
 
-		return Parse(responseStr);
-	}
+        const CURLcode res = curl_easy_perform(mCurl);
+        ASSERT(res == CURLE_OK);
 
-	GridData GitHubContributionCalendarClient::Parse(const std::string& response) const
-	{
-		GridData contributionInfo;
+        const std::string responseStr(responseBuffer.data());
 
-		simdjson::ondemand::parser parser;
-		const simdjson::padded_string padded = simdjson::padded_string(response);
-		simdjson::ondemand::document doc = parser.iterate(padded);
+        return Parse(responseStr);
+    }
 
-		auto weeks = doc["data"]["user"]["contributionsCollection"]["contributionCalendar"]["weeks"];
+    // https://docs.github.com/en/graphql/reference/objects#contributionscollection
+    std::wstring GitHubContributionCalendarClient::BuildContributionQuery(_In_ const std::wstring& userName,
+                                                                          _In_ const std::wstring& fields) const
+    {
+        PRECONDITION(userName.empty() == false);
+        PRECONDITION(fields.empty() == false);
 
-		auto weeksArray = weeks.get_array();
-		contributionInfo.mColoumCount = weeksArray.count_elements().value();
+        std::wstringstream ss;
+        ss << L"{ \"query\": \"query { ";
+        ss << L"user(login: \\\"" << EscapeJsonString(userName) << L"\\\") { ";
+        ss << L"contributionsCollection { ";
+        ss << L"contributionCalendar { ";
+        ss << L"weeks { ";
+        ss << L"contributionDays { " << EscapeJsonString(fields) << L" } ";
+        ss << L"} } } } }\" }";
 
-		size_t yIndex = 0;
-		size_t xIndex = 0;
-		for (auto week : weeksArray)
-		{
-			auto daysArray = week["contributionDays"].get_array();
+        const std::wstring ret = ss.str();
+        POSTCONDITION(ret.empty() == false);
 
-			const size_t rowCount = daysArray.count_elements().value();
+        return ret;
+    }
 
-			if (contributionInfo.mRowCount != 0)
-			{
-				// 오늘이 수요일인 경우
-				// 일, 월, 화, 수 까지 rowCount가 4가 될 수 있다.
-				// 따라서 작거나 같은경우까지 혀용한다.
-				ASSERT(rowCount <= contributionInfo.mRowCount);
-			}
+    std::wstring GitHubContributionCalendarClient::EscapeJsonString(_In_ const std::wstring& input) const
+    {
+        ASSERT(input.empty() == false);
 
-			contributionInfo.mRowCount = rowCount;
+        std::wstringstream escaped;
+        escaped << std::hex << std::setfill(L'0');
 
-			std::vector<GridCell> gridCells;
+        for (const wchar_t ch : input)
+        {
+            switch (ch)
+            {
+            case L'\"': escaped << L"\\\"";
+                break;
+            case L'\\': escaped << L"\\\\";
+                break;
+            case L'\b': escaped << L"\\b";
+                break;
+            case L'\f': escaped << L"\\f";
+                break;
+            case L'\n': escaped << L"\\n";
+                break;
+            case L'\r': escaped << L"\\r";
+                break;
+            case L'\t': escaped << L"\\t";
+                break;
+            default:
+                if (ch < 0x20 || ch == 0x7F || (ch >= 0xD800 && ch <= 0xDFFF))
+                {
+                    escaped << L"\\u" << std::setw(4) << static_cast<unsigned int>(ch);
+                }
+                else
+                {
+                    escaped << ch;
+                }
+                break;
+            }
+        }
 
-			for (auto day : daysArray)
-			{
-				const uint64_t count = day["contributionCount"].get_uint64().value();
-				const std::string color = std::string(day["color"].get_string().value());
+        const std::wstring ret = escaped.str();
+        POSTCONDITION(ret.empty() == false);
 
-				GridCell cell;
-				cell.mCount = count;
-				cell.mColor = HexToColorRef(Utf8ToWideString(color));
-				cell.mYIndex = yIndex;
-				cell.mXIndex = xIndex;
+        return ret;
+    }
 
-				contributionInfo.mMaxCount = max(cell.mCount, contributionInfo.mMaxCount);
+    GridData GitHubContributionCalendarClient::Parse(_In_ const std::string& response) const
+    {
+        PRECONDITION(response.empty() == false);
 
-				gridCells.push_back(cell);
+        GridData gridData;
 
-				yIndex++;
-			}
+        nlohmann::json root = nlohmann::json::parse(response, nullptr, false);
+        ASSERT(root.contains("data"));
 
-			contributionInfo.mCells.push_back(gridCells);
+        const auto& weeks = root["data"]["user"]["contributionsCollection"]["contributionCalendar"]["weeks"];
+        ASSERT(weeks.is_array());
 
-			xIndex++;
-			yIndex = 0;
-		}
+        gridData.mColoumCount = weeks.size();
 
-		return contributionInfo;
-	}
+        size_t yIndex = 0;
+        size_t xIndex = 0;
+
+        for (const auto& week : weeks)
+        {
+            const auto& days = week["contributionDays"];
+            ASSERT(days.is_array());
+
+            const size_t rowCount = days.size();
+            if (gridData.mRowCount != 0)
+            {
+                // 오늘이 수요일인 경우
+                // 일, 월, 화, 수 까지 rowCount가 4가 될 수 있다.
+                // 따라서 작거나 같은경우까지 혀용한다.
+                ASSERT(rowCount <= gridData.mRowCount);
+            }
+
+            gridData.mRowCount = rowCount;
+
+            std::vector<GridCell> gridCells;
+
+            for (const auto& day : days)
+            {
+                GridCell cell;
+                cell.mCount = day.value("contributionCount", 0);
+                const std::string colorHex = day.value("color", "#FFFFFF");
+                cell.mColor = HexToColorRef(Utf8ToWideString(colorHex));
+                cell.mXIndex = xIndex;
+                cell.mYIndex = yIndex;
+
+                gridData.mMaxCount = std::max(cell.mCount, gridData.mMaxCount);
+                gridCells.push_back(cell);
+
+                ++yIndex;
+            }
+
+            gridData.mCells.push_back(gridCells);
+
+            xIndex++;
+            yIndex = 0;
+        }
+
+        POSTCONDITION(gridData.mColoumCount != 0);
+        POSTCONDITION(gridData.mRowCount != 0);
+        POSTCONDITION(gridData.mMaxCount != 0);
+        POSTCONDITION(gridData.mCells.empty() == false);
+
+        return gridData;
+    }
+
+    std::wstring GitHubContributionCalendarClient::Utf8ToWideString(_In_ const std::string& utf8) const
+    {
+        if (utf8.empty())
+            return L"";
+
+        const int sizeRequired = MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), -1, nullptr, 0);
+        if (sizeRequired <= 0)
+            return L"";
+
+        std::wstring wide(sizeRequired, 0);
+        MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), -1, wide.data(), sizeRequired);
+
+        wide.resize(sizeRequired - 1);
+        return wide;
+    }
+
+    std::string GitHubContributionCalendarClient::WideStringToUtf8(const std::wstring& wide) const
+    {
+        if (wide.empty())
+            return "";
+
+        const int sizeRequired = WideCharToMultiByte(CP_UTF8, 0, wide.c_str(), -1, nullptr, 0, nullptr, nullptr);
+        if (sizeRequired <= 0)
+            return "";
+
+        std::string utf8(sizeRequired, 0);
+        WideCharToMultiByte(CP_UTF8, 0, wide.c_str(), -1, utf8.data(), sizeRequired, nullptr, nullptr);
+
+        utf8.resize(sizeRequired - 1);
+        return utf8;
+    }
+
+    COLORREF GitHubContributionCalendarClient::HexToColorRef(_In_ const std::wstring& hex) const
+    {
+        PRECONDITION(hex.length() == 7);
+        PRECONDITION(hex[0] == L'#');
+
+        const unsigned int r = std::stoi(hex.substr(1, 2), nullptr, 16);
+        const unsigned int g = std::stoi(hex.substr(3, 2), nullptr, 16);
+        const unsigned int b = std::stoi(hex.substr(5, 2), nullptr, 16);
+
+        POSTCONDITION(r <= 255);
+        POSTCONDITION(g <= 255);
+        POSTCONDITION(b <= 255);
+
+        return RGB(r, g, b); // Macro: ((BYTE)(r) | ((BYTE)(g) << 8) | ((BYTE)(b) << 16))
+    }
+
+    size_t GitHubContributionCalendarClient::WriteCallback(const void* contents, const size_t size, const size_t nmemb,
+                                                           void* userp)
+    {
+        const size_t totalSize = size * nmemb;
+        std::vector<char>* buffer = static_cast<std::vector<char>*>(userp);
+
+        size_t currentSize = buffer->size();
+        if (currentSize > 0)
+            currentSize -= 1;
+
+        if (totalSize > std::numeric_limits<size_t>::max() - currentSize - 1)
+            return 0; // overflow 방지
+
+        buffer->resize(currentSize + totalSize + 1);
+        memcpy(buffer->data() + currentSize, contents, totalSize);
+
+        buffer->at(currentSize + totalSize) = '\0';
+        return totalSize;
+    }
 } // CoTigraphy

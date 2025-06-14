@@ -1,5 +1,5 @@
 ﻿// \file CoTigraphy.cpp
-// \last_updated 2025-06-13
+// \last_updated 2025-06-14
 // \author Oh Sungsik <ohsungsik@outlook.com>
 // \copyright (C) 2025. Oh Sungsik. All rights reserved.
 
@@ -20,197 +20,169 @@
 
 namespace CoTigraphy
 {
-	//float ComputeScaleExponential(int cellIndex, int totalCells)
-	//{
-	//    constexpr float headScale = 1.0f;
-	//    constexpr float tailScale = 0.5f;
+    Error Initialize()
+    {
+        CoTigraphy::MemoryLeakDetector::Initialize();
+        CoTigraphy::HandleLeakDetector::Initialize();
 
-	//    const float t = static_cast<float>(cellIndex) / static_cast<float>(totalCells - 1);
-	//    return headScale * std::pow(tailScale / headScale, t);
-	//}
+        std::wstring githubToken;
+        std::wstring userName;
 
-	//void TEST_WEBP(const GridData& grid)
-	//{
-	//    constexpr int cellSize = 10; // 각 칸 크기 (px)
-	//    constexpr int cellMargin = 3; // 칸 간격 (px)
-	//    constexpr int daysPerWeek = 7; // Sunday~Saturday (7 rows)
+        CoTigraphy::CommandLineParser commandLineParser;
+        Error error = SetupCommandLineParser(commandLineParser, githubToken, userName);
+        if (error.IsFailed())
+            return error;
 
-	//    const size_t width = grid.mColoumCount * (cellSize + cellMargin) - cellMargin;
-	//    constexpr size_t height = (daysPerWeek + 1) * (cellSize + cellMargin) - cellMargin;
+        int argc = 0;
+        LPWSTR* const argv = CommandLineToArgvW(GetCommandLineW(), &argc);
+        error = commandLineParser.Parse(argc, argv);
+        LocalFree(argv);
+        if (error.IsFailed())
+        {
+            ASSERT(error.IsSucceeded()); // Commandl line arguments 파싱 실패
+            return error;
+        }
 
-	//    GridCanvasContext context;
-	//    context.mWidth = static_cast<int>(width);
-	//    context.mHeight = height;
-	//    context.mCellSize = cellSize;
-	//    context.mCellMargin = cellMargin;
+        GitHubContributionCalendarClient contributionCalendarClient;
+        contributionCalendarClient.Initialize();
+        contributionCalendarClient.SetAccessToken(githubToken);
 
-	//    GridCanvas gridCanvas;
-	//    gridCanvas.Create(context);
-	//    gridCanvas.ClearTo(RGB(0x01, 0x04, 0x09));
+        const std::wstring reuiqredFields = L"date contributionCount color";    // 필요한 field
+        GridData gridData = contributionCalendarClient.FetchContributionInfo(userName, reuiqredFields);
 
-	//    for (const auto& cell : grid.mCells)
-	//    {
-	//        const size_t y = cell.mYIndex + 1;
-	//        const size_t x = cell.mXIndex;
+        constexpr int cellSize = 10; // 각 칸 크기 (px)
+        constexpr int cellMargin = 3; // 칸 간격 (px)
+        constexpr int daysPerWeek = 7; // Sunday~Saturday (7 rows)
 
-	//        gridCanvas.DrawRect((unsigned int)y, (unsigned int)x, cell.mColor);
-	//    }
+        const size_t width = gridData.mColoumCount * (cellSize + cellMargin) - cellMargin;
+        constexpr size_t height = daysPerWeek * (cellSize + cellMargin) - cellMargin;
 
-	//    constexpr COLORREF wormBaseColor = RGB(0xFF, 0xA5, 0x00);
-	//    for (int i = 0; i < 4; ++i)
-	//    {
-	//        const float scale = ComputeScaleExponential(i, 4);
-	//        gridCanvas.DrawRectScale(0, i, scale, wormBaseColor);
-	//    }
+        GridCanvasContext context;
+        context.mWidth = static_cast<int>(width);
+        context.mHeight = height;
+        context.mCellSize = cellSize;
+        context.mCellMargin = cellMargin;
 
-	//    WebPWriter webPWriter;
-	//    const std::wstring fileName = L"animated.webp";
-	//    webPWriter.SaveToFile(fileName, gridCanvas.GetBuffer(), gridCanvas.GetBufferSize(), context.mWidth,
-	//                          context.mHeight);
-	//}
+        GridCanvas gridCanvas;
+        gridCanvas.Create(context);
 
-	Error Initialize()
-	{
-		CoTigraphy::MemoryLeakDetector::Initialize();
-		CoTigraphy::HandleLeakDetector::Initialize();
+        Grid grid(gridData);
+        Worm worm(grid);
 
-		std::wstring githubToken;
+        WebPWriter webPWriter;
+        webPWriter.Initialize(context.mWidth, context.mHeight);
 
-		CoTigraphy::CommandLineParser commandLineParser;
-		Error error = SetupCommandLineParser(commandLineParser, githubToken);
-		if (error.IsFailed())
-			return error;
+        int currentLevel = 1;
+        while (true)
+        {
+            bool ret = worm.Move(currentLevel);
+            if (ret == false)
+            {
+                currentLevel++;
 
-		int argc = 0;
-		LPWSTR* const argv = CommandLineToArgvW(GetCommandLineW(), &argc);
-		error = commandLineParser.Parse(argc, argv);
-		LocalFree(argv);
-		if (error.IsFailed())
-		{
-			ASSERT(error.IsSucceeded()); // Commandl line arguments 파싱 실패
-			return error;
-		}
+                if (currentLevel > gridData.mMaxCount)
+                    break;
+                else
+                    continue;
+            }
 
-		GitHubContributionCalendarClient contributionCalendarClient;
-		contributionCalendarClient.Initialize();
-		contributionCalendarClient.SetAccessToken(githubToken);
-		GridData gridData = contributionCalendarClient.FetchContributionInfo();
+            gridCanvas.ClearTo(RGB(0x01, 0x04, 0x09));
+            gridCanvas.DrawGrid(grid);
+            gridCanvas.DrawWorm(worm);
 
-		constexpr int cellSize = 10; // 각 칸 크기 (px)
-		constexpr int cellMargin = 3; // 칸 간격 (px)
-		constexpr int daysPerWeek = 7; // Sunday~Saturday (7 rows)
-
-		const size_t width = gridData.mColoumCount * (cellSize + cellMargin) - cellMargin;
-		constexpr size_t height = daysPerWeek * (cellSize + cellMargin) - cellMargin;
-
-		GridCanvasContext context;
-		context.mWidth = static_cast<int>(width);
-		context.mHeight = height;
-		context.mCellSize = cellSize;
-		context.mCellMargin = cellMargin;
-
-		GridCanvas gridCanvas;
-		gridCanvas.Create(context);
-
-		Grid grid(gridData);
-		Worm worm(grid);
-
-		WebPWriter webPWriter;
-		webPWriter.Initialize(context.mWidth, context.mHeight);
-
-		int currentLevel = 1;
-		while (true)
-		{
-			bool ret = worm.Move(currentLevel);
-			if (ret == false)
-			{
-				currentLevel++;
-
-				if (currentLevel > gridData.mMaxCount)
-					break;
-				else
-					continue;
-			}
-
-			gridCanvas.ClearTo(RGB(0x01, 0x04, 0x09));
-			gridCanvas.DrawGrid(grid);
-			gridCanvas.DrawWorm(worm);
-
-			webPWriter.AddFrame(gridCanvas.GetBuffer());
-		}
+            webPWriter.AddFrame(gridCanvas.GetBuffer());
+        }
 
 
-		const std::wstring fileName = L"animated.webp";
-		webPWriter.SaveToFile(fileName);
+        const std::wstring fileName = L"animated.webp";
+        webPWriter.SaveToFile(fileName);
 
-		contributionCalendarClient.Uninitialize();
+        contributionCalendarClient.Uninitialize();
 
-		return MAKE_ERROR(eErrorCode::Succeeded);
-	}
+        return MAKE_ERROR(eErrorCode::Succeeded);
+    }
 
-	void Uninitialize() noexcept
-	{
-	}
+    void Uninitialize() noexcept
+    {
+    }
 
-	Error SetupCommandLineParser(CoTigraphy::CommandLineParser& commandLineParser, std::wstring& githubToken)
-	{
-		Error error = commandLineParser.AddOption(CommandLineOption{
-			L"--help", // mName
-			L"-h", // mShortName
-			L"Show help message", // mDescription
-			false, // mRequiresValue
-			true, // mCausesExit
-			[&](const std::wstring_view&)
-			{
-				commandLineParser.PrintHelpTo(std::wcout);
-				::TerminateProcess(::GetCurrentProcess(), 0);
-			}
-			});
-		if (error.IsFailed())
-		{
-			ASSERT(error.IsSucceeded());
-			return error;
-		}
+    Error SetupCommandLineParser(_In_ CoTigraphy::CommandLineParser& commandLineParser, _Out_ std::wstring& githubToken,
+                                 _Out_ std::wstring& userName)
+    {
+        Error error = commandLineParser.AddOption(CommandLineOption{
+            L"--help", // mName
+            L"-h", // mShortName
+            L"Show help message", // mDescription
+            false, // mRequiresValue
+            true, // mCausesExit
+            [&](const std::wstring_view&)
+            {
+                commandLineParser.PrintHelpTo(std::wcout);
+                ::TerminateProcess(::GetCurrentProcess(), 0);
+            }
+        });
+        if (error.IsFailed())
+        {
+            ASSERT(error.IsSucceeded());
+            return error;
+        }
 
-		error = commandLineParser.AddOption(CommandLineOption{
-			L"--version", // mName
-			L"-v", // mShortName
-			L"Show program version", // mDescription
-			false, // mRequiresValue
-			false, // mCausesExit
-			[&](const std::wstring_view& value) // mHandler
-			{
-				UNREFERENCED_PARAMETER(value);
+        error = commandLineParser.AddOption(CommandLineOption{
+            L"--version", // mName
+            L"-v", // mShortName
+            L"Show program version", // mDescription
+            false, // mRequiresValue
+            false, // mCausesExit
+            [&](const std::wstring_view& value) // mHandler
+            {
+                UNREFERENCED_PARAMETER(value);
 
-				std::wstring versionInfo = L"Version: ";
-				versionInfo += VERSION_STRING_WIDE;
-				versionInfo += L"\n";
-				OutputDebugStringW(versionInfo.c_str());
-			}
-			});
-		if (error.IsFailed())
-		{
-			ASSERT(error.IsSucceeded());
-			return error;
-		}
+                std::wstring versionInfo = L"Version: ";
+                versionInfo += VERSION_STRING_WIDE;
+                versionInfo += L"\n";
+                OutputDebugStringW(versionInfo.c_str());
+            }
+        });
+        if (error.IsFailed())
+        {
+            ASSERT(error.IsSucceeded());
+            return error;
+        }
 
-		error = commandLineParser.AddOption(CommandLineOption{
-			L"--token", // mName
-			L"-t", // mShortName
-			L"Github personal access token", // mDescription
-			true, // mRequiresValue
-			false, // mCausesExit
-			[&](const std::wstring_view& value) // mHandler
-			{
-				githubToken = value;
-			}
-			});
-		if (error.IsFailed())
-		{
-			ASSERT(error.IsSucceeded());
-			return error;
-		}
+        error = commandLineParser.AddOption(CommandLineOption{
+            L"--token", // mName
+            L"-t", // mShortName
+            L"Github personal access token", // mDescription
+            true, // mRequiresValue
+            false, // mCausesExit
+            [&](const std::wstring_view& value) // mHandler
+            {
+                githubToken = value;
+            }
+        });
+        if (error.IsFailed())
+        {
+            ASSERT(error.IsSucceeded());
+            return error;
+        }
 
-		return MAKE_ERROR(eErrorCode::Succeeded);
-	}
+        error = commandLineParser.AddOption(CommandLineOption{
+            L"--userName", // mName
+            L"-n", // mShortName
+            L"Github user name", // mDescription
+            true, // mRequiresValue
+            false, // mCausesExit
+            [&](const std::wstring_view& value) // mHandler
+            {
+                userName = value;
+            }
+        });
+        if (error.IsFailed())
+        {
+            ASSERT(error.IsSucceeded());
+            return error;
+        }
+
+        return MAKE_ERROR(eErrorCode::Succeeded);
+    }
 } // namespace CoTigraphy

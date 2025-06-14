@@ -1,5 +1,5 @@
 ﻿// \file CoTigraphy.hpp
-// \last_updated 2025-06-10
+// \last_updated 2025-06-14
 // \author Oh Sungsik <ohsungsik@outlook.com>
 // \copyright (C) 2025. Oh Sungsik. All rights reserved.
 
@@ -14,7 +14,7 @@ namespace CoTigraphy
 
 
 	// Initialize
-	Error SetupCommandLineParser(CoTigraphy::CommandLineParser& commandLineParser, std::wstring& githubToken);
+	Error SetupCommandLineParser(_Out_ CoTigraphy::CommandLineParser& commandLineParser, _In_ std::wstring& githubToken, _In_ std::wstring& userName);
 
 
 
